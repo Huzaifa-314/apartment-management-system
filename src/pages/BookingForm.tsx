@@ -12,6 +12,8 @@ import {
   saveBookingDraftWithForm,
   snapshotFromFormState,
   applySnapshotToFormBase,
+  saveBookingLeasePickSession,
+  clearBookingLeasePickSession,
 } from '../lib/bookingDraft';
 import { fetchPublicRoom } from '../lib/roomPublicApi';
 import { Room } from '../types';
@@ -146,6 +148,19 @@ const BookingForm: React.FC = () => {
     return () => window.clearTimeout(t);
   }, [formData, roomId, room, roomReadyForDraft]);
 
+  useEffect(() => {
+    if (!roomId || !formData.moveInDate || !formData.leaseEndDate) return;
+    saveBookingLeasePickSession(roomId, formData.moveInDate, formData.leaseEndDate);
+  }, [roomId, formData.moveInDate, formData.leaseEndDate]);
+
+  const navigateToLeaseDates = () =>
+    navigate(`/booking/${roomId}/dates`, {
+      state:
+        formData.moveInDate && formData.leaseEndDate
+          ? { moveInDate: formData.moveInDate, leaseEndDate: formData.leaseEndDate }
+          : undefined,
+    });
+
   const handleFileChange = (field: keyof typeof formData.documents) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -199,6 +214,7 @@ const BookingForm: React.FC = () => {
       }
 
       clearBookingDraft();
+      if (roomId) clearBookingLeasePickSession(roomId);
       const bid = data?.booking?.id;
       if (bid) {
         toast.success('Complete payment to submit your application for review.');
@@ -244,7 +260,7 @@ const BookingForm: React.FC = () => {
           <Button
             variant="secondary"
             leftIcon={<ArrowLeft className="h-5 w-5" />}
-            onClick={() => navigate(`/booking/${roomId}/dates`)}
+            onClick={navigateToLeaseDates}
             className="mb-4"
           >
             Change dates
@@ -375,7 +391,7 @@ const BookingForm: React.FC = () => {
                     <button
                       type="button"
                       className="text-blue-600 hover:underline font-medium"
-                      onClick={() => navigate(`/booking/${roomId}/dates`)}
+                      onClick={navigateToLeaseDates}
                     >
                       Change dates
                     </button>
@@ -717,6 +733,7 @@ const BookingForm: React.FC = () => {
                     variant="secondary"
                     onClick={() => {
                       clearBookingDraft();
+                      if (roomId) clearBookingLeasePickSession(roomId);
                       navigate('/tenant/profile');
                     }}
                   >

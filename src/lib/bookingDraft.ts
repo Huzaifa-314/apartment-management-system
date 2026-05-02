@@ -2,7 +2,50 @@ import type { Room } from '../types';
 
 export const BOOKING_DRAFT_STORAGE_KEY = 'rms_booking_draft_v1';
 
+const BOOKING_LEASE_PICK_STORAGE_PREFIX = 'rms_booking_lease_pick_v1:';
+
 const LEGACY_PENDING_KEY = 'pendingBookingRoomId';
+
+function leasePickStorageKey(roomId: string): string {
+  return `${BOOKING_LEASE_PICK_STORAGE_PREFIX}${roomId}`;
+}
+
+/** Persist step-1 lease range for intra-flow continuity (browser back), not restored from stale draft.dates when starting from room listings. */
+export function saveBookingLeasePickSession(
+  roomId: string,
+  moveInDate: string,
+  leaseEndDate: string
+): void {
+  try {
+    sessionStorage.setItem(leasePickStorageKey(roomId), JSON.stringify({ moveInDate, leaseEndDate }));
+  } catch {
+    /* quota / privacy mode */
+  }
+}
+
+export function loadBookingLeasePickSession(
+  roomId: string
+): { moveInDate: string; leaseEndDate: string } | null {
+  try {
+    const raw = sessionStorage.getItem(leasePickStorageKey(roomId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { moveInDate?: string; leaseEndDate?: string };
+    if (parsed?.moveInDate && parsed?.leaseEndDate) {
+      return { moveInDate: parsed.moveInDate, leaseEndDate: parsed.leaseEndDate };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearBookingLeasePickSession(roomId: string): void {
+  try {
+    sessionStorage.removeItem(leasePickStorageKey(roomId));
+  } catch {
+    /* ignore */
+  }
+}
 
 export type BookingRoomSummary = {
   number: string;
@@ -100,6 +143,7 @@ export function saveBookingDraftFromPublicRoom(room: Room): void {
   } catch {
     /* ignore quota */
   }
+  clearBookingLeasePickSession(room.id);
 }
 
 export function saveBookingDraftWithForm(

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { addMonths, endOfMonth, endOfYear, format, parseISO, startOfMonth, startOfYear } from 'date-fns';
 import { ArrowLeft, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -8,7 +8,11 @@ import Card from '../components/shared/Card';
 import Button from '../components/shared/Button';
 import RoomAvailabilityCalendar from '../components/booking/RoomAvailabilityCalendar';
 import { fetchPublicRoom, fetchRoomAvailability } from '../lib/roomPublicApi';
-import { loadBookingDraft, updateDraftLeaseDates } from '../lib/bookingDraft';
+import {
+  loadBookingLeasePickSession,
+  saveBookingLeasePickSession,
+  updateDraftLeaseDates,
+} from '../lib/bookingDraft';
 import {
   isMonthRangeAllFree,
   monthOverlapsBlocks,
@@ -16,19 +20,16 @@ import {
 } from '../lib/availability';
 import type { Room, RoomAvailabilityBlock } from '../types';
 
-/** 12 calendar months: from first day of start month through last day of 11 months later. */
-function defaultLeaseEndYmd(moveInYmd: string): string {
-  const start = startOfMonth(parseISO(moveInYmd));
-  return format(endOfMonth(addMonths(start, 11)), 'yyyy-MM-dd');
-}
-
 function ymdToMonthKey(ymd: string): string {
   return ymd.slice(0, 7);
 }
 
+type DatesLocationState = { moveInDate?: string; leaseEndDate?: string } | undefined;
+
 const BookingDatesPage: React.FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [room, setRoom] = useState<Room | null>(null);
   const [calendarYear, setCalendarYear] = useState(() => new Date().getFullYear());
   const [blocks, setBlocks] = useState<RoomAvailabilityBlock[]>([]);
@@ -61,24 +62,36 @@ const BookingDatesPage: React.FC = () => {
   }, [loadRoom]);
 
   /**
-   * Draft restore: bring back a prior selection so refresh / step 2 → step 1 doesn't lose it.
-   * Otherwise: NO auto-selection. We only position the calendar on the first available month.
+   * Restore lease dates only from navigate state (step 2 "Change dates") or session fallback
+   * (same-tab browser Back). Do not pre-fill from the draft snapshot — stale months were annoying
+   * when starting booking from room listings again.
    */
   useEffect(() => {
     if (!roomId || !room) return;
-    const draft = loadBookingDraft();
-    if (draft?.roomId === roomId && draft.form?.moveInDate && draft.form?.leaseEndDate) {
-      setMoveInDate(draft.form.moveInDate);
-      setLeaseEndDate(draft.form.leaseEndDate);
-      setCalendarYear(parseISO(draft.form.moveInDate).getFullYear());
+    const nav = location.state as DatesLocationState;
+    const apply = (moveIn: string, end: string) => {
+      setMoveInDate(moveIn);
+      setLeaseEndDate(end);
+      setCalendarYear(parseISO(moveIn).getFullYear());
+      setPendingStartMonthKey(null);
+    };
+
+    if (nav?.moveInDate && nav?.leaseEndDate) {
+      apply(nav.moveInDate, nav.leaseEndDate);
       return;
     }
 
-    const anchor = room.nextAvailableDate?.slice(0, 10) ?? format(new Date(), 'yyyy-MM-dd');
+    const fromSession = loadBookingLeasePickSession(roomId);
+    if (fromSession) {
+      apply(fromSession.moveInDate, fromSession.leaseEndDate);
+      return;
+    }
+
     setMoveInDate('');
     setLeaseEndDate('');
-    setCalendarYear(parseISO(anchor).getFullYear());
-  }, [roomId, room]);
+    setPendingStartMonthKey(null);
+    setCalendarYear(new Date().getFullYear());
+  }, [roomId, room, location.state]);
 
   useEffect(() => {
     if (!roomId) return;
@@ -123,13 +136,13 @@ const BookingDatesPage: React.FC = () => {
     [room]
   );
 
-  /** Picker: typing a start month commits a default 12-month lease immediately. */
+  /** Picker: lease start month only — end month must be chosen separately. */
   const onStartMonthChange = (monthKey: string) => {
     if (!monthKey) return;
     const startYmd = resolveStartYmd(monthKey);
     setPendingStartMonthKey(null);
     setMoveInDate(startYmd);
-    setLeaseEndDate(defaultLeaseEndYmd(startYmd));
+    setLeaseEndDate('');
     setCalendarYear(parseInt(monthKey.slice(0, 4), 10));
   };
 
@@ -184,15 +197,6 @@ const BookingDatesPage: React.FC = () => {
     [pendingStartMonthKey, resolveStartYmd, blocks]
   );
 
-  /** While pending end-pick: commits a default 12-month lease from the pending start. */
-  const useTwelveMonthDefault = () => {
-    if (!pendingStartMonthKey) return;
-    const startYmd = resolveStartYmd(pendingStartMonthKey);
-    setMoveInDate(startYmd);
-    setLeaseEndDate(defaultLeaseEndYmd(startYmd));
-    setPendingStartMonthKey(null);
-  };
-
   const goApply = async () => {
     if (!roomId || !room) return;
     if (room.status === 'maintenance') {
@@ -229,6 +233,7 @@ const BookingDatesPage: React.FC = () => {
       moveInDate,
       leaseEndDate
     );
+    saveBookingLeasePickSession(roomId, moveInDate, leaseEndDate);
     navigate(`/booking/${roomId}`, {
       state: { moveInDate, leaseEndDate },
     });
@@ -262,13 +267,13 @@ const BookingDatesPage: React.FC = () => {
           <span className="capitalize">{room.type}</span>
         </p>
         <p className="text-sm text-gray-500 mt-2">
-          Leases are by full months. The year view scrolls to your first available month; red months are
-          already blocked.
+          Leases are by full months — pick a range on the grid or using the fields below. Red months overlap
+          an existing lease or hold.
         </p>
         {room.status === 'occupied' && room.nextAvailableDate && (
           <p className="mt-2 text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-md px-3 py-2">
             This room is currently occupied. The earliest lease can begin from{' '}
-            <strong>{room.nextAvailableDate}</strong> (we&apos;ve aligned your months below). Admin approval
+            <strong>{room.nextAvailableDate}</strong>. Admin approval
             still requires the room to be vacant.
           </p>
         )}
@@ -307,18 +312,9 @@ const BookingDatesPage: React.FC = () => {
               onMonthClick={onCalendarMonthClick}
             />
             {pendingStartMonthKey && (
-              <div className="mt-2 flex items-center justify-between rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900">
-                <span>
-                  Lease starts <strong>{pendingStartMonthKey}</strong>. Click a later month to set the
-                  end.
-                </span>
-                <button
-                  type="button"
-                  className="text-xs font-medium text-blue-700 hover:underline"
-                  onClick={useTwelveMonthDefault}
-                >
-                  Use 12-month default
-                </button>
+              <div className="mt-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900">
+                Lease starts <strong>{pendingStartMonthKey}</strong>. Hover forward, then click a later month
+                to set the end.
               </div>
             )}
           </div>
@@ -368,8 +364,7 @@ const BookingDatesPage: React.FC = () => {
                 />
               </div>
               <p className="mt-1 text-xs text-gray-500">
-                Ends on the <strong>last day</strong> of this month. Default is a 12-month lease from your
-                start month.
+                Ends on the <strong>last day</strong> of this month.
               </p>
             </div>
           </div>

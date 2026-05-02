@@ -18,9 +18,23 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const app = express();
 
+/** Comma-separated list in FRONTEND_URL, e.g. local dev + public tunnel. Always includes common local Vite URLs. */
+function allowedCorsOrigins() {
+  const defaults = ['http://localhost:5173', 'http://127.0.0.1:5173'];
+  const raw = process.env.FRONTEND_URL?.trim();
+  if (!raw) return defaults;
+  const extra = raw.split(',').map((s) => s.trim()).filter(Boolean);
+  return [...new Set([...defaults, ...extra])];
+}
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      const allowed = allowedCorsOrigins();
+      if (allowed.includes(origin)) return callback(null, true);
+      callback(null, false);
+    },
     credentials: true,
   })
 );

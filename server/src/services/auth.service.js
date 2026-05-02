@@ -16,7 +16,10 @@ export async function comparePassword(plain, hash) {
 }
 
 export async function loginUser({ email, password }, jwtSecret) {
-  const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+  const normalizedEmail = String(email ?? '')
+    .toLowerCase()
+    .trim();
+  const user = await User.findOne({ email: normalizedEmail }).select('+password');
   if (!user) return null;
   const ok = await comparePassword(password, user.password);
   if (!ok) return null;
@@ -78,7 +81,10 @@ export async function logoutUser(rawRefresh) {
 }
 
 export async function registerUser({ name, email, password, role, phone }, jwtSecret) {
-  const existing = await User.findOne({ email: email.toLowerCase() });
+  const normalizedEmail = String(email ?? '')
+    .toLowerCase()
+    .trim();
+  const existing = await User.findOne({ email: normalizedEmail });
   if (existing) {
     const err = new Error('Email already in use');
     err.status = 409;
@@ -88,7 +94,7 @@ export async function registerUser({ name, email, password, role, phone }, jwtSe
   const hashed = await hashPassword(password);
   const user = await User.create({
     name: name.trim(),
-    email: email.toLowerCase(),
+    email: normalizedEmail,
     password: hashed,
     role,
     phone: phone?.trim() || '',

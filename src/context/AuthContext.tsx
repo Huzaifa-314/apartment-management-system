@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { isAxiosError } from 'axios';
 import { User, Tenant } from '../types';
 import { api } from '../lib/api';
 import { removeLegacyPendingBookingKey } from '../lib/bookingDraft';
@@ -77,8 +78,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(data.user);
       setLoading(false);
       return { success: true, role: data.user.role };
-    } catch {
-      setError('Invalid email or password');
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        if (err.response?.status === 401) {
+          setError('Invalid email or password');
+        } else if (typeof err.response?.data?.message === 'string') {
+          setError(err.response.data.message);
+        } else if (!err.response) {
+          setError(
+            'Cannot reach the server. If you open the app via a public URL, set FRONTEND_URL on the API to that origin (comma-separated), or leave VITE_API_URL empty and proxy through the same dev server.'
+          );
+        } else {
+          setError('Sign in failed. Please try again.');
+        }
+      } else if (err instanceof Error && err.message) {
+        setError(err.message);
+      } else {
+        setError('Invalid email or password');
+      }
       setLoading(false);
       return { success: false };
     }
