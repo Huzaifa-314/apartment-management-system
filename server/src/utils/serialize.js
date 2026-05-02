@@ -1,3 +1,5 @@
+import { effectivePaymentStatus } from './paymentStatus.js';
+
 export function toId(doc) {
   if (!doc) return null;
   return doc._id ? doc._id.toString() : String(doc);
@@ -66,7 +68,7 @@ export function serializePayment(p) {
     amount: o.amount,
     date: o.date ? new Date(o.date).toISOString() : '',
     dueDate: o.dueDate ? new Date(o.dueDate).toISOString() : '',
-    status: o.status,
+    status: effectivePaymentStatus(o),
     method: o.method || undefined,
     reference: o.reference || undefined,
     receiptUrl: o.receiptUrl || undefined,

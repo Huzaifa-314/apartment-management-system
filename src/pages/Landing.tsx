@@ -1,117 +1,75 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Building2, Shield, CreditCard, Users } from 'lucide-react';
-import Button from '../components/shared/Button';
-import PublicSiteHeader from '../components/shared/PublicSiteHeader';
 import { useAuth } from '../context/AuthContext';
 import { useSiteSettings } from '../context/SiteSettingsContext';
+import { useHomepageData } from '../hooks/useHomepageData';
+import PublicFooter from '../components/shared/PublicFooter';
+import HeroSection from '../components/landing/HeroSection';
+import LiveStatsStrip from '../components/landing/LiveStatsStrip';
+import FeaturedRoomsSection from '../components/landing/FeaturedRoomsSection';
+import AnnouncementsSection from '../components/landing/AnnouncementsSection';
+import PricingSnapshotSection from '../components/landing/PricingSnapshotSection';
+import AmenitiesStrip from '../components/landing/AmenitiesStrip';
+import CtaSection from '../components/landing/CtaSection';
 
 const Landing: React.FC = () => {
   const { user } = useAuth();
   const { settings } = useSiteSettings();
+  const { homepage, announcements, loading, homepageUnavailable } = useHomepageData();
+
   const dashboardHref = user?.role === 'admin' ? '/admin/dashboard' : '/tenant/dashboard';
   const primaryCtaHref = user ? dashboardHref : '/register';
+  const primaryCtaLabel = user ? 'Go to dashboard' : 'Get Started';
+
+  const stats = homepage?.stats ?? null;
+  const pricing = homepage?.pricing ?? {};
+  const topAmenities = homepage?.topAmenities ?? [];
+  const featuredRooms = homepage?.featuredRooms ?? [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      <PublicSiteHeader variant="landing" />
+    <div className="min-h-screen bg-white dark:bg-gray-950">
+      <HeroSection
+        heroTagline={settings.heroTagline}
+        propertyName={settings.propertyName}
+        user={user}
+        primaryCtaHref={primaryCtaHref}
+        primaryCtaLabel={primaryCtaLabel}
+        stats={stats}
+        loading={loading}
+        homepageUnavailable={homepageUnavailable}
+      />
 
-      <div className="container mx-auto px-4 py-16">
-        {/* Hero Section */}
-        <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400">
-            {settings.propertyName}
-          </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">{settings.heroTagline}</p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link to={primaryCtaHref}>
-              <Button variant="primary" size="lg">
-                {user ? 'Go to dashboard' : 'Get Started'}
-              </Button>
-            </Link>
-            <Link to="/login">
-              <Button variant="secondary" size="lg">
-                Log in
-              </Button>
-            </Link>
-            <Link to="/rooms">
-              <Button variant="secondary" size="lg">
-                Browse Rooms
-              </Button>
-            </Link>
-          </div>
-        </div>
+      <LiveStatsStrip
+        stats={stats}
+        loading={loading}
+        homepageUnavailable={homepageUnavailable}
+        currencySymbol={settings.currencySymbol}
+      />
 
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-          {[
-            {
-              icon: <Building2 className="h-8 w-8 text-blue-500" />,
-              title: "Room Management",
-              description: "Efficiently manage all your properties in one place"
-            },
-            {
-              icon: <Shield className="h-8 w-8 text-green-500" />,
-              title: "Secure Platform",
-              description: "Bank-grade security for all your transactions"
-            },
-            {
-              icon: <CreditCard className="h-8 w-8 text-purple-500" />,
-              title: "Online Payments",
-              description: "Hassle-free rent collection and tracking"
-            },
-            {
-              icon: <Users className="h-8 w-8 text-amber-500" />,
-              title: "Tenant Portal",
-              description: "Self-service portal for your tenants"
-            }
-          ].map((feature, index) => (
-            <div 
-              key={index}
-              className="p-6 rounded-xl bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
-            >
-              <div className="mb-4">{feature.icon}</div>
-              <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-              <p className="text-gray-600 dark:text-gray-300">{feature.description}</p>
-            </div>
-          ))}
-        </div>
+      <FeaturedRoomsSection
+        rooms={featuredRooms}
+        loading={loading}
+        homepageUnavailable={homepageUnavailable}
+        currencySymbol={settings.currencySymbol}
+      />
 
-        {/* Statistics */}
-        <div className="bg-blue-600 dark:bg-blue-800 rounded-2xl p-8 mb-16">
-          <div className="grid md:grid-cols-3 gap-8 text-white text-center">
-            {settings.landingStats.map((s, i) => (
-              <div key={i}>
-                <div className="text-4xl font-bold mb-2">{s.value}</div>
-                <div className="text-blue-100">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+      <AnnouncementsSection announcements={announcements} />
 
-        {/* CTA Section */}
-        <div className="text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to get started?</h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-8">{settings.ctaSubtext}</p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link to={primaryCtaHref}>
-              <Button variant="primary" size="lg">
-                {user ? 'Go to dashboard' : 'Start Free Trial'}
-              </Button>
-            </Link>
-            <Link to="/login">
-              <Button variant="secondary" size="lg">
-                Log in
-              </Button>
-            </Link>
-            <Link to="/rooms">
-              <Button variant="secondary" size="lg">
-                Browse Rooms
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
+      <PricingSnapshotSection
+        pricing={pricing}
+        loading={loading}
+        homepageUnavailable={homepageUnavailable}
+        currencySymbol={settings.currencySymbol}
+      />
+
+      <AmenitiesStrip
+        topAmenities={topAmenities}
+        loading={loading}
+        homepageUnavailable={homepageUnavailable}
+      />
+
+      <CtaSection ctaSubtext={settings.ctaSubtext} />
+
+      <PublicFooter />
     </div>
   );
 };

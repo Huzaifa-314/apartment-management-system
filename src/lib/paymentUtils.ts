@@ -1,5 +1,10 @@
 import type { Payment } from '../types';
 
+/** Unpaid rent that can be paid online (matches API rules for checkout). */
+export function isPayableRentPayment(p: Payment): boolean {
+  return p.status === 'pending' || p.status === 'overdue';
+}
+
 /** Next payment to collect: overdue first, then by earliest due date. */
 export function selectCurrentPayment(payments: Payment[]): Payment | undefined {
   const unpaid = payments.filter((p) => p.status === 'pending' || p.status === 'overdue');

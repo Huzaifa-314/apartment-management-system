@@ -11,6 +11,7 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import PublicRooms from './pages/PublicRooms';
+import PublicRoomDetail from './pages/PublicRoomDetail';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminRooms from './pages/admin/AdminRooms';
 import AdminPayments from './pages/admin/AdminPayments';
@@ -25,8 +26,10 @@ import AdminLayout from './components/admin/AdminLayout';
 import TenantDashboard from './pages/tenant/TenantDashboard';
 import TenantComplaints from './pages/tenant/TenantComplaints';
 import TenantPayments from './pages/tenant/TenantPayments';
+import TenantPaymentCheckout from './pages/tenant/TenantPaymentCheckout';
 import TenantProfile from './pages/tenant/TenantProfile';
 import TenantApplications from './pages/tenant/TenantApplications';
+import BookingDatesPage from './pages/BookingDatesPage';
 import BookingForm from './pages/BookingForm';
 import BookingCheckout from './pages/BookingCheckout';
 import BookingSuccess from './pages/BookingSuccess';
@@ -69,6 +72,7 @@ function App() {
               {/* Public Routes */}
               <Route path="/" element={<Landing />} />
               <Route path="/rooms" element={<PublicRooms />} />
+              <Route path="/rooms/:roomId" element={<PublicRoomDetail />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               {/* Static booking paths must be registered before /booking/:roomId or "success"/"checkout" are captured as room IDs. */}
@@ -78,6 +82,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <BookingCheckout />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/booking/:roomId/dates"
+                element={
+                  <ProtectedRoute>
+                    <BookingDatesPage />
                   </ProtectedRoute>
                 }
               />
@@ -136,6 +148,14 @@ function App() {
                     <TenantPayments />
                   </ProtectedRoute>
                 } 
+              />
+              <Route
+                path="/tenant/payments/checkout/:paymentId"
+                element={
+                  <ProtectedRoute allowedRole="tenant">
+                    <TenantPaymentCheckout />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="/tenant/payments/success"

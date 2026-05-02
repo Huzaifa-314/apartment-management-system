@@ -132,173 +132,191 @@ const TenantDashboard: React.FC = () => {
     navigate('/tenant/payments');
   };
 
+  const rentStatusLabel = currentPayment
+    ? currentPayment.status === 'overdue'
+      ? 'Overdue'
+      : 'Due soon'
+    : 'All caught up';
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
 
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto px-4 py-8 max-w-7xl space-y-8">
         <WelcomeMessage userName={tenant.name} />
 
-        {/* Quick overview */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
-          <Card className="border border-slate-200 shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-amber-50 text-amber-700">
-                <CreditCard className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Rent</p>
-                {currentPayment ?
-                  <>
-                    <p className="text-lg font-semibold text-gray-900">
-                      {formatCurrency(currentPayment.amount, settings.currencySymbol)}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Due {formatDate(currentPayment.dueDate)} ·{' '}
-                      <StatusIndicator status={currentPayment.status} size="sm" />
-                    </p>
-                  </>
-                : <p className="text-lg font-medium text-green-700">All caught up</p>}
-              </div>
+        {/* Quick stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex items-start gap-4">
+            <div className="p-2.5 rounded-lg bg-amber-50 text-amber-600 shrink-0">
+              <CreditCard className="h-5 w-5" />
             </div>
-          </Card>
-          <Card className="border border-slate-200 shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-violet-50 text-violet-700">
-                <MessageSquareWarning className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Requests</p>
-                <p className="text-lg font-semibold text-gray-900">{openComplaintCount} open</p>
-                <Link
-                  to="/tenant/complaints"
-                  className="text-xs text-blue-600 hover:text-blue-800 inline-flex items-center gap-0.5 mt-0.5"
-                >
-                  View complaints <ArrowRight className="h-3 w-3" />
-                </Link>
-              </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Rent</p>
+              {currentPayment ? (
+                <>
+                  <p className="text-xl font-semibold text-gray-900 mt-1">
+                    {formatCurrency(currentPayment.amount, settings.currencySymbol)}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Due {formatDate(currentPayment.dueDate)} · {rentStatusLabel}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-xl font-semibold text-green-700 mt-1">All caught up</p>
+                  <p className="text-xs text-gray-500 mt-1">No pending balance</p>
+                </>
+              )}
             </div>
-          </Card>
-          <Card className="border border-slate-200 shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-sky-50 text-sky-700">
-                <ClipboardList className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Lease</p>
-                <p className="text-sm font-medium text-gray-900">Ends {formatDate(tenant.leaseEndDate)}</p>
-                <Link
-                  to="/tenant/profile"
-                  className="text-xs text-blue-600 hover:text-blue-800 inline-flex items-center gap-0.5 mt-0.5"
-                >
-                  Profile & documents <ArrowRight className="h-3 w-3" />
-                </Link>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-          <div className="lg:col-span-2 space-y-6">
-            <Announcements announcements={announcements} loading={false} />
           </div>
-          <div>
-            <ContactManagement />
+
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex items-start gap-4">
+            <div className="p-2.5 rounded-lg bg-violet-50 text-violet-600 shrink-0">
+              <MessageSquareWarning className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Open requests</p>
+              <p className="text-xl font-semibold text-gray-900 mt-1">{openComplaintCount}</p>
+              <Link
+                to="/tenant/complaints"
+                className="text-xs text-blue-600 hover:text-blue-800 inline-flex items-center gap-0.5 mt-1"
+              >
+                View complaints <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex items-start gap-4">
+            <div className="p-2.5 rounded-lg bg-sky-50 text-sky-600 shrink-0">
+              <ClipboardList className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Lease ends</p>
+              <p className="text-xl font-semibold text-gray-900 mt-1">
+                {formatDate(tenant.leaseEndDate)}
+              </p>
+              <Link
+                to="/tenant/profile"
+                className="text-xs text-blue-600 hover:text-blue-800 inline-flex items-center gap-0.5 mt-1"
+              >
+                Profile & documents <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+        {/* Room details + Payment status */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card
-            title="Your room"
-            className="lg:col-span-2 bg-gradient-to-br from-blue-50 to-white border-blue-100"
+            title="Your room & lease"
+            className="lg:col-span-2"
           >
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
                 <div className="flex items-center mb-4">
-                  <Home className="h-6 w-6 text-blue-600 mr-2" />
-                  <h3 className="text-xl font-semibold text-gray-900">
+                  <div className="p-2 rounded-lg bg-blue-50 text-blue-600 mr-3">
+                    <Home className="h-5 w-5" />
+                  </div>
+                  <h3 className="text-base font-semibold text-gray-900">
                     {room ? `Room ${room.number}` : 'No room assigned'}
                   </h3>
                 </div>
 
-                {room ?
+                {room ? (
                   <>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-4">
+                    <dl className="grid grid-cols-2 gap-x-4 gap-y-3 mb-4">
                       <div>
-                        <p className="text-sm text-gray-600">Floor</p>
-                        <p className="font-medium">{room.floor}</p>
+                        <dt className="text-xs text-gray-500">Floor</dt>
+                        <dd className="text-sm font-medium text-gray-900 mt-0.5">{room.floor}</dd>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Type</p>
-                        <p className="font-medium capitalize">{room.type}</p>
+                        <dt className="text-xs text-gray-500">Type</dt>
+                        <dd className="text-sm font-medium text-gray-900 mt-0.5 capitalize">
+                          {room.type}
+                        </dd>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Area</p>
-                        <p className="font-medium">{room.area} sq.ft</p>
+                        <dt className="text-xs text-gray-500">Area</dt>
+                        <dd className="text-sm font-medium text-gray-900 mt-0.5">
+                          {room.area} sq.ft
+                        </dd>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Monthly rent</p>
-                        <p className="font-medium text-blue-700">
+                        <dt className="text-xs text-gray-500">Monthly rent</dt>
+                        <dd className="text-sm font-semibold text-blue-700 mt-0.5">
                           {formatCurrency(room.rent, settings.currencySymbol)}
-                        </p>
+                        </dd>
                       </div>
-                    </div>
+                    </dl>
 
-                    <div>
-                      <p className="text-sm text-gray-600 mb-2">Amenities</p>
-                      <div className="flex flex-wrap gap-2">
-                        {room.amenities.map((amenity, index) => (
-                          <span
-                            key={index}
-                            className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full"
-                          >
-                            {amenity}
-                          </span>
-                        ))}
+                    {room.amenities.length > 0 && (
+                      <div>
+                        <p className="text-xs text-gray-500 mb-2">Amenities</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {room.amenities.map((amenity, index) => (
+                            <span
+                              key={index}
+                              className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-full"
+                            >
+                              {amenity}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </>
-                : <p className="text-gray-600">When a room is assigned, details will appear here.</p>}
+                ) : (
+                  <p className="text-sm text-gray-600">
+                    When a room is assigned, details will appear here.
+                  </p>
+                )}
               </div>
 
-              <div className="flex-1">
+              <div className="md:border-l md:border-gray-100 md:pl-6">
                 <div className="flex items-center mb-4">
-                  <Calendar className="h-6 w-6 text-blue-600 mr-2" />
-                  <h3 className="text-xl font-semibold text-gray-900">Lease details</h3>
+                  <div className="p-2 rounded-lg bg-blue-50 text-blue-600 mr-3">
+                    <Calendar className="h-5 w-5" />
+                  </div>
+                  <h3 className="text-base font-semibold text-gray-900">Lease details</h3>
                 </div>
 
-                <div className="space-y-3">
+                <dl className="space-y-3">
                   <div>
-                    <p className="text-sm text-gray-600">Move-in date</p>
-                    <p className="font-medium">{formatDate(tenant.moveInDate)}</p>
+                    <dt className="text-xs text-gray-500">Move-in date</dt>
+                    <dd className="text-sm font-medium text-gray-900 mt-0.5">
+                      {formatDate(tenant.moveInDate)}
+                    </dd>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Lease end date</p>
-                    <p className="font-medium">{formatDate(tenant.leaseEndDate)}</p>
+                    <dt className="text-xs text-gray-500">Lease end date</dt>
+                    <dd className="text-sm font-medium text-gray-900 mt-0.5">
+                      {formatDate(tenant.leaseEndDate)}
+                    </dd>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Emergency contact</p>
-                    <p className="font-medium">
-                      {tenant.emergencyContact?.name} ({tenant.emergencyContact?.relationship})
-                    </p>
-                    <p className="text-sm">{tenant.emergencyContact?.phone}</p>
+                    <dt className="text-xs text-gray-500">Emergency contact</dt>
+                    <dd className="text-sm font-medium text-gray-900 mt-0.5">
+                      {tenant.emergencyContact?.name}{' '}
+                      <span className="font-normal text-gray-600">
+                        ({tenant.emergencyContact?.relationship})
+                      </span>
+                    </dd>
+                    <dd className="text-sm text-gray-600">{tenant.emergencyContact?.phone}</dd>
                   </div>
-                </div>
+                </dl>
               </div>
             </div>
           </Card>
 
-          <Card
-            title="Payment status"
-            className={`${currentPayment ? 'bg-gradient-to-br from-amber-50 to-white border-amber-100' : 'bg-gradient-to-br from-green-50 to-white border-green-100'}`}
-          >
-            <div className="space-y-4">
-              {currentPayment ?
-                <>
-                  <div className="flex justify-between items-center gap-2">
+          <Card title="Payment status" className="h-full">
+            <div className="h-full flex flex-col">
+              {currentPayment ? (
+                <div className="space-y-4 flex-1 flex flex-col">
+                  <div className="flex justify-between items-start gap-2">
                     <div>
-                      <p className="text-sm text-gray-600">Amount due</p>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">Amount due</p>
+                      <p className="text-3xl font-bold text-gray-900 mt-1">
                         {formatCurrency(currentPayment.amount, settings.currencySymbol)}
                       </p>
                     </div>
@@ -306,60 +324,76 @@ const TenantDashboard: React.FC = () => {
                   </div>
 
                   <div>
-                    <p className="text-sm text-gray-600">Due date</p>
-                    <p className="font-medium">{formatDate(currentPayment.dueDate)}</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">Due date</p>
+                    <p className="text-sm font-medium text-gray-900 mt-1">
+                      {formatDate(currentPayment.dueDate)}
+                    </p>
                   </div>
 
-                  <Button
-                    variant="primary"
-                    fullWidth
-                    leftIcon={<CreditCard className="h-5 w-5" />}
-                    onClick={handlePayNow}
-                  >
-                    Pay now
-                  </Button>
-                </>
-              : <div className="text-center py-6">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-100 text-green-600 mb-4">
-                    <Receipt className="h-6 w-6" />
+                  <div className="mt-auto pt-2">
+                    <Button
+                      variant="primary"
+                      fullWidth
+                      leftIcon={<CreditCard className="h-5 w-5" />}
+                      onClick={handlePayNow}
+                    >
+                      Pay now
+                    </Button>
                   </div>
-                  <p className="text-xl font-medium text-gray-900">All payments up to date</p>
-                  <p className="text-sm text-gray-600 mt-1">No pending balance</p>
                 </div>
-              }
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-100 text-green-600 mb-4">
+                    <Receipt className="h-7 w-7" />
+                  </div>
+                  <p className="text-base font-semibold text-gray-900">All payments up to date</p>
+                  <p className="text-sm text-gray-500 mt-1">No pending balance</p>
+                </div>
+              )}
             </div>
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-          <Card title="Recent payments" className="bg-white shadow-lg">
-            {payments.length > 0 ?
+        {/* Notices + Contact */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <Announcements announcements={announcements} loading={false} />
+          </div>
+          <div>
+            <ContactManagement />
+          </div>
+        </div>
+
+        {/* Recent activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card title="Recent payments">
+            {payments.length > 0 ? (
               <>
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto -mx-6">
                   <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                    <thead>
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
                           Due
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
                           Amount
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <th className="px-6 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">
                           Status
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="divide-y divide-gray-100">
                       {payments.slice(0, 5).map((payment) => (
                         <tr key={payment.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
+                          <td className="px-6 py-3 text-sm text-gray-900 whitespace-nowrap">
                             {formatDate(payment.dueDate)}
                           </td>
                           <td className="px-4 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">
                             {formatCurrency(payment.amount, settings.currencySymbol)}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
+                          <td className="px-6 py-3 whitespace-nowrap text-right">
                             <StatusIndicator status={payment.status} size="sm" />
                           </td>
                         </tr>
@@ -367,31 +401,40 @@ const TenantDashboard: React.FC = () => {
                     </tbody>
                   </table>
                 </div>
-                <div className="mt-4 text-center">
-                  <Button variant="secondary" onClick={() => navigate('/tenant/payments')}>
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    rightIcon={<ArrowRight className="h-4 w-4" />}
+                    onClick={() => navigate('/tenant/payments')}
+                  >
                     View all payments
                   </Button>
                 </div>
               </>
-            : <div className="text-center py-10">
-                <Receipt className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No payment history yet</h3>
-                <p className="text-gray-500 mb-4 text-sm">
+            ) : (
+              <div className="text-center py-10">
+                <Receipt className="mx-auto h-10 w-10 text-gray-300 mb-3" />
+                <h3 className="text-sm font-medium text-gray-900 mb-1">No payment history yet</h3>
+                <p className="text-xs text-gray-500">
                   Your ledger will show charges once the office posts them.
                 </p>
               </div>
-            }
+            )}
           </Card>
 
-          <Card title="Recent complaints" className="bg-white shadow-lg">
-            {recentComplaints.length > 0 ?
+          <Card title="Recent complaints">
+            {recentComplaints.length > 0 ? (
               <>
-                <ul className="divide-y divide-gray-100">
+                <ul className="divide-y divide-gray-100 -my-2">
                   {recentComplaints.map((c) => (
-                    <li key={c.id} className="py-3 flex justify-between gap-3 items-start">
+                    <li
+                      key={c.id}
+                      className="py-3 flex justify-between gap-3 items-center"
+                    >
                       <div className="min-w-0">
                         <p className="font-medium text-gray-900 text-sm truncate">{c.title}</p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 mt-0.5 capitalize">
                           {format(parseISO(c.createdAt), 'MMM d, yyyy')} · {c.category}
                         </p>
                       </div>
@@ -399,24 +442,32 @@ const TenantDashboard: React.FC = () => {
                     </li>
                   ))}
                 </ul>
-                <div className="mt-4 text-center">
-                  <Button variant="secondary" onClick={() => navigate('/tenant/complaints')}>
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    rightIcon={<ArrowRight className="h-4 w-4" />}
+                    onClick={() => navigate('/tenant/complaints')}
+                  >
                     Manage complaints
                   </Button>
                 </div>
               </>
-            : <div className="text-center py-10">
-                <MessageSquareWarning className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <p className="text-gray-600 text-sm">You have not submitted any complaints yet.</p>
+            ) : (
+              <div className="text-center py-10">
+                <MessageSquareWarning className="mx-auto h-10 w-10 text-gray-300 mb-3" />
+                <p className="text-sm text-gray-600 mb-3">
+                  You have not submitted any complaints yet.
+                </p>
                 <Button
                   variant="primary"
-                  className="mt-4"
+                  size="sm"
                   onClick={() => navigate('/tenant/complaints')}
                 >
                   Submit a request
                 </Button>
               </div>
-            }
+            )}
           </Card>
         </div>
       </div>

@@ -41,6 +41,44 @@ export type Room = {
   tenantId?: string;
   lastMaintenance?: string;
   nextMaintenance?: string;
+  /** `GET /api/rooms/public` with `include=all` or `GET /api/rooms/public/:id` */
+  nextAvailableDate?: string | null;
+  bookableNow?: boolean;
+};
+
+/** Block returned by `GET /api/rooms/public/:id/availability` */
+export type RoomAvailabilityBlock = {
+  start: string;
+  end: string;
+  kind: 'tenant' | 'pending' | 'pending_payment';
+  bookingId?: string;
+};
+
+export type RoomAvailabilityResponse = {
+  roomId: string;
+  from: string;
+  to: string;
+  blocks: RoomAvailabilityBlock[];
+};
+
+export type RoomAvailabilityBulkResponse = {
+  from: string;
+  to: string;
+  ranges: { roomId: string; blocks: RoomAvailabilityBlock[] }[];
+};
+
+/** Aggregated public data for the landing page (`GET /api/public/homepage`). */
+export type HomepageData = {
+  stats: {
+    totalRooms: number;
+    availableRooms: number;
+    occupiedRooms: number;
+    occupancyRate: number;
+    startingRent: number;
+  };
+  pricing: Partial<Record<Room['type'], number>>;
+  topAmenities: { name: string; count: number }[];
+  featuredRooms: Room[];
 };
 
 export type Payment = {
@@ -51,7 +89,7 @@ export type Payment = {
   date: string;
   dueDate: string;
   status: 'paid' | 'pending' | 'overdue';
-  method?: 'card' | 'bank' | 'cash';
+  method?: 'card' | 'bank' | 'cash' | 'stripe' | 'sslcommerz';
   reference?: string;
   receiptUrl?: string;
 };

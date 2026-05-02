@@ -16,18 +16,15 @@ const WelcomeMessage: React.FC<{ userName: string }> = ({ userName }) => {
   const greeting = getTimeBasedGreeting();
 
   return (
-    <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-8 text-white shadow-xl">
-      <div className="flex items-center space-x-3 mb-4">
+    <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl px-6 py-5 text-white shadow-md">
+      <div className="flex items-center space-x-2.5 mb-1.5">
         {greeting.icon}
-        <h1 className="text-3xl font-bold">
-          {greeting.text}, {userName}!
+        <h1 className="text-2xl font-bold">
+          {greeting.text}, {userName}
         </h1>
       </div>
-      <p className="text-blue-100 text-lg">
-        Welcome to your resident dashboard at {settings.propertyName}.
-      </p>
-      <p className="text-blue-200 mt-2">
-        Payments, maintenance requests, and updates are available from the navigation above.
+      <p className="text-blue-100 text-sm">
+        Welcome back to your {settings.propertyName} resident dashboard.
       </p>
     </div>
   );

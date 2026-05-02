@@ -34,59 +34,65 @@ const ContactManagement: React.FC = () => {
   };
 
   return (
-    <Card title="Contact Management Office" className="bg-white shadow-lg">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Button
-          variant="primary"
-          onClick={handleCall}
-          leftIcon={<Phone className="h-5 w-5" />}
-          fullWidth
-        >
-          Call office
-        </Button>
-        <Button
-          variant="secondary"
-          onClick={handleEmail}
-          leftIcon={<Mail className="h-5 w-5" />}
-          fullWidth
-        >
-          Email us
-        </Button>
-        <Button
-          variant="success"
-          onClick={handleChat}
-          leftIcon={<MessageSquare className="h-5 w-5" />}
-          fullWidth
-          disabled={!settings.liveChatEnabled || !settings.liveChatUrl}
-        >
-          Live chat
-        </Button>
-      </div>
-
-      <div className="mt-6 p-4 bg-gray-50 rounded-lg space-y-3 text-sm text-gray-600">
-        <div>
-          <h4 className="font-medium text-gray-900 mb-1">Office hours</h4>
-          <p className="whitespace-pre-line">{settings.officeHours}</p>
-        </div>
-        <div className="pt-2 border-t border-gray-200">
-          <p className="font-medium text-gray-900 mb-1">Main line</p>
-          <button
-            type="button"
+    <Card
+      title="Contact Management Office"
+      className="h-full"
+      bodyClassName="!py-6"
+    >
+      <div className="space-y-5">
+        <div className="flex flex-col gap-3">
+          <Button
+            variant="primary"
             onClick={handleCall}
-            className="text-blue-600 hover:text-blue-800"
+            leftIcon={<Phone className="h-5 w-5" />}
+            fullWidth
           >
-            {settings.phone}
-          </button>
+            Call office
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={handleEmail}
+            leftIcon={<Mail className="h-5 w-5" />}
+            fullWidth
+          >
+            Email us
+          </Button>
+          <Button
+            variant="success"
+            onClick={handleChat}
+            leftIcon={<MessageSquare className="h-5 w-5" />}
+            fullWidth
+            disabled={!settings.liveChatEnabled || !settings.liveChatUrl}
+          >
+            Live chat
+          </Button>
         </div>
-        <div>
-          <p className="font-medium text-gray-900 mb-1">After hours / emergencies</p>
-          <button
-            type="button"
-            onClick={handleEmergency}
-            className="text-blue-600 hover:text-blue-800"
-          >
-            {settings.emergencyPhone}
-          </button>
+
+        <div className="p-5 bg-gray-50 rounded-lg border border-gray-100 space-y-3 text-sm text-gray-600">
+          <div>
+            <h4 className="font-medium text-gray-900 mb-1">Office hours</h4>
+            <p className="whitespace-pre-line">{settings.officeHours}</p>
+          </div>
+          <div className="pt-2 border-t border-gray-200">
+            <p className="font-medium text-gray-900 mb-1">Main line</p>
+            <button
+              type="button"
+              onClick={handleCall}
+              className="text-blue-600 hover:text-blue-800"
+            >
+              {settings.phone}
+            </button>
+          </div>
+          <div>
+            <p className="font-medium text-gray-900 mb-1">After hours / emergencies</p>
+            <button
+              type="button"
+              onClick={handleEmergency}
+              className="text-blue-600 hover:text-blue-800"
+            >
+              {settings.emergencyPhone}
+            </button>
+          </div>
         </div>
       </div>
     </Card>

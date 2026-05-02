@@ -120,6 +120,45 @@ export function saveBookingDraftWithForm(
   }
 }
 
+const emptyFormSnapshot = (): BookingDraftFormSnapshot => ({
+  name: '',
+  email: '',
+  phone: '',
+  alternatePhone: '',
+  moveInDate: '',
+  leaseEndDate: '',
+  address: { street: '', city: '', state: '', pincode: '' },
+  emergencyContact: { name: '', phone: '', relationship: '' },
+  occupation: {
+    type: 'employed',
+    company: '',
+    designation: '',
+    workAddress: '',
+    monthlyIncome: '',
+  },
+  preferences: { vegetarian: false, smoking: false, pets: false },
+  additionalNotes: '',
+});
+
+/** Step 1 → apply: persist lease dates without dropping other draft fields. */
+export function updateDraftLeaseDates(
+  roomId: string,
+  roomSummary: BookingRoomSummary,
+  moveInDate: string,
+  leaseEndDate: string
+): void {
+  const existing = loadBookingDraft();
+  const base =
+    existing?.roomId === roomId && existing.form
+      ? applySnapshotToFormBase(existing.form)
+      : emptyFormSnapshot();
+  saveBookingDraftWithForm(roomId, roomSummary, {
+    ...base,
+    moveInDate,
+    leaseEndDate,
+  });
+}
+
 export function snapshotFromFormState(form: {
   name: string;
   email: string;

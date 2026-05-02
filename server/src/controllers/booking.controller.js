@@ -9,6 +9,7 @@ import { finalizeBookingFromSSLCommerzPayment } from '../services/sslcommerzChec
 import { hashPassword } from '../services/auth.service.js';
 import { sendMail } from '../services/email.service.js';
 import { parsePagination } from '../utils/pagination.js';
+import { canBookRoomForRange } from '../services/roomAvailability.service.js';
 
 function genPassword() {
   return crypto.randomBytes(12).toString('base64url').slice(0, 16);
@@ -142,10 +143,17 @@ export const bookingController = {
           return res.status(400).json({ message: 'Only paid applications awaiting review can be approved' });
         }
 
+        /**
+         * Policy A: assignment only when the room is physically vacant.
+         * Applicants may pay earlier for a future move-in; they remain pending until move-out.
+         */
         const room = await Room.findById(booking.roomId);
         if (!room) return res.status(404).json({ message: 'Room not found' });
         if (room.status !== 'vacant' || room.tenantId) {
-          return res.status(409).json({ message: 'Room is not available for assignment' });
+          return res.status(409).json({
+            message:
+              'Room is not vacant yet. Approve after the current tenant vacates (future reservation paid in advance is OK).',
+          });
         }
 
         let user =
@@ -440,8 +448,12 @@ export const bookingController = {
     try {
       const room = await Room.findById(req.body.roomId || req.params.roomId);
       if (!room) return res.status(404).json({ message: 'Room not found' });
-      if (room.status !== 'vacant') {
-        return res.status(400).json({ message: 'Room is not available for booking' });
+
+      const moveIn = req.body.moveInDate ? new Date(req.body.moveInDate) : null;
+      const leaseEnd = req.body.leaseEndDate ? new Date(req.body.leaseEndDate) : null;
+      const avail = await canBookRoomForRange(room, moveIn, leaseEnd, null);
+      if (!avail.ok) {
+        return res.status(400).json({ message: avail.reason || 'Room is not available for these dates' });
       }
 
       const applicantUserId = req.user?.id || null;

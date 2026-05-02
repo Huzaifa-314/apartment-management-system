@@ -11,8 +11,10 @@ import { bookingController } from '../controllers/booking.controller.js';
 import { dashboardController } from '../controllers/dashboard.controller.js';
 import { notificationController } from '../controllers/notification.controller.js';
 import { sslcommerzIPNController } from '../controllers/sslcommerz.ipn.controller.js';
+import { sslcommerzPaymentIPNController } from '../controllers/sslcommerzPayment.ipn.controller.js';
 import { siteSettingsController } from '../controllers/siteSettings.controller.js';
 import { announcementController } from '../controllers/announcement.controller.js';
+import { publicController } from '../controllers/public.controller.js';
 
 export function createRouter(env) {
   const router = express.Router();
@@ -32,8 +34,12 @@ export function createRouter(env) {
 
   router.get('/site-settings', siteSettingsController.getPublic);
   router.get('/announcements', announcementController.listPublic);
+  router.get('/public/homepage', publicController.homepage);
 
   router.get('/rooms/public', roomController.listPublic);
+  router.get('/rooms/public/availability', roomController.getPublicAvailabilityBulk);
+  router.get('/rooms/public/:id/availability', roomController.getPublicAvailability);
+  router.get('/rooms/public/:id', roomController.getPublicById);
   router.get('/rooms/:id', roomController.getById);
   router.get('/rooms', authMw, adminOnly, roomController.listAll);
   router.post('/rooms', authMw, adminOnly, express.json(), roomController.create);
@@ -96,6 +102,33 @@ export function createRouter(env) {
   router.patch('/payments/:id/pay', authMw, tenantOnly, express.json(), paymentController.pay);
   router.post('/payments/:id/checkout-session', authMw, tenantOnly, express.json(), paymentController.createCheckoutSession);
   router.get('/payments/confirm-checkout', authMw, tenantOnly, paymentController.confirmCheckoutSession);
+
+  router.post(
+    '/payments/sslcommerz-browser-return/success/:paymentId',
+    paymentController.sslcommerzPaymentBrowserReturnSuccess
+  );
+  router.get(
+    '/payments/sslcommerz-browser-return/success/:paymentId',
+    paymentController.sslcommerzPaymentBrowserReturnSuccess
+  );
+  router.post(
+    '/payments/sslcommerz-browser-return/fail/:paymentId',
+    paymentController.sslcommerzPaymentBrowserReturnFail
+  );
+  router.get(
+    '/payments/sslcommerz-browser-return/fail/:paymentId',
+    paymentController.sslcommerzPaymentBrowserReturnFail
+  );
+  router.post(
+    '/payments/sslcommerz-browser-return/cancel/:paymentId',
+    paymentController.sslcommerzPaymentBrowserReturnCancel
+  );
+  router.get(
+    '/payments/sslcommerz-browser-return/cancel/:paymentId',
+    paymentController.sslcommerzPaymentBrowserReturnCancel
+  );
+
+  router.post('/payments/ipn', express.json(), sslcommerzPaymentIPNController.handleIPN);
 
   router.get('/notifications', authMw, tenantOnly, notificationController.list);
 

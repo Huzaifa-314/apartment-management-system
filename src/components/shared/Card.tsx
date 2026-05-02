@@ -9,6 +9,8 @@ interface CardProps {
   header?: React.ReactNode;
   hoverable?: boolean;
   bordered?: boolean;
+  /** Merged with default body padding (`px-6 py-4`). Use for overrides, e.g. `!py-6`. */
+  bodyClassName?: string;
 }
 
 const Card: React.FC<CardProps> = ({
@@ -20,6 +22,7 @@ const Card: React.FC<CardProps> = ({
   header,
   hoverable = false,
   bordered = true,
+  bodyClassName = '',
 }) => {
   return (
     <div 
@@ -39,7 +42,7 @@ const Card: React.FC<CardProps> = ({
         </div>
       )}
       
-      <div className="px-6 py-4">{children}</div>
+      <div className={`px-6 py-4 ${bodyClassName}`.trim()}>{children}</div>
       
       {footer && (
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">

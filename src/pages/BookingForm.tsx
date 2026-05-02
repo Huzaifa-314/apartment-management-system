@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { User, Mail, Phone, Home, Calendar, Upload, Camera, FileText, MapPin, ArrowLeft } from 'lucide-react';
 import Navbar from '../components/shared/Navbar';
 import Card from '../components/shared/Card';
@@ -13,6 +13,7 @@ import {
   snapshotFromFormState,
   applySnapshotToFormBase,
 } from '../lib/bookingDraft';
+import { fetchPublicRoom } from '../lib/roomPublicApi';
 import { Room } from '../types';
 import toast from 'react-hot-toast';
 
@@ -57,9 +58,12 @@ function initialFormState() {
   };
 }
 
+type BookingLocationState = { moveInDate?: string; leaseEndDate?: string } | null;
+
 const BookingForm: React.FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [room, setRoom] = useState<Room | null>(null);
   const [loading, setLoading] = useState(false);
   const [roomReadyForDraft, setRoomReadyForDraft] = useState(false);
@@ -76,8 +80,8 @@ const BookingForm: React.FC = () => {
     if (!roomId) return;
     const load = async () => {
       try {
-        const { data } = await api.get<{ room: Room }>(`/api/rooms/${roomId}`);
-        setRoom(data.room);
+        const r = await fetchPublicRoom(roomId);
+        setRoom(r);
       } catch {
         toast.error('Room not found');
         navigate('/rooms');
@@ -104,6 +108,30 @@ const BookingForm: React.FC = () => {
     }
     setRoomReadyForDraft(true);
   }, [room, roomId]);
+
+  useEffect(() => {
+    const nav = location.state as BookingLocationState;
+    if (nav?.moveInDate && nav?.leaseEndDate) {
+      setFormData(prev => ({
+        ...prev,
+        moveInDate: nav.moveInDate!,
+        leaseEndDate: nav.leaseEndDate!,
+      }));
+    }
+  }, [location.state]);
+
+  useEffect(() => {
+    if (!roomId || !room) return;
+    const draft = loadBookingDraft();
+    const nav = location.state as BookingLocationState;
+    const fromNav = Boolean(nav?.moveInDate && nav?.leaseEndDate);
+    const fromDraft =
+      draft?.roomId === roomId &&
+      Boolean(draft.form?.moveInDate && draft.form?.leaseEndDate);
+    if (!fromNav && !fromDraft) {
+      navigate(`/booking/${roomId}/dates`, { replace: true });
+    }
+  }, [roomId, room, navigate, location.state]);
 
   useEffect(() => {
     if (!roomReadyForDraft || !roomId || !room || room.id !== roomId) return;
@@ -134,6 +162,11 @@ const BookingForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!roomId) return;
+    if (!formData.moveInDate || !formData.leaseEndDate) {
+      toast.error('Please choose move-in and lease end dates (step 1).');
+      navigate(`/booking/${roomId}/dates`);
+      return;
+    }
     setLoading(true);
 
     try {
@@ -211,13 +244,13 @@ const BookingForm: React.FC = () => {
           <Button
             variant="secondary"
             leftIcon={<ArrowLeft className="h-5 w-5" />}
-            onClick={() => navigate('/rooms')}
+            onClick={() => navigate(`/booking/${roomId}/dates`)}
             className="mb-4"
           >
-            Back to Rooms
+            Change dates
           </Button>
-          <h1 className="text-2xl font-bold text-gray-900">Book Room {room.number}</h1>
-          <p className="text-gray-600">Complete your booking application</p>
+          <h1 className="text-2xl font-bold text-gray-900">Step 2 — Book Room {room.number}</h1>
+          <p className="text-gray-600">Complete your application (payment is the next step)</p>
           <p className="mt-2 text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-md px-3 py-2">
             Your answers are saved automatically as you type. Uploaded files are not stored in the draft—please
             re-attach documents before submitting.
@@ -334,28 +367,38 @@ const BookingForm: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Move-in Details */}
+                {/* Lease dates (from step 1) */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Move-in Details</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                      type="date"
-                      label="Preferred Move-in Date"
-                      value={formData.moveInDate}
-                      onChange={(e) => setFormData({ ...formData, moveInDate: e.target.value })}
-                      leftIcon={<Calendar className="h-5 w-5 text-gray-400" />}
-                      required
-                    />
-
-                    <Input
-                      type="date"
-                      label="Lease Duration (End Date)"
-                      value={formData.leaseEndDate}
-                      onChange={(e) => setFormData({ ...formData, leaseEndDate: e.target.value })}
-                      leftIcon={<Calendar className="h-5 w-5 text-gray-400" />}
-                      required
-                    />
+                  <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Your lease dates</h3>
+                  <p className="text-sm text-gray-600">
+                    Chosen in step 1.{' '}
+                    <button
+                      type="button"
+                      className="text-blue-600 hover:underline font-medium"
+                      onClick={() => navigate(`/booking/${roomId}/dates`)}
+                    >
+                      Change dates
+                    </button>
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg bg-gray-50 border border-gray-200 p-4">
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                        Move-in
+                      </p>
+                      <p className="mt-1 flex items-center gap-2 text-gray-900 font-medium">
+                        <Calendar className="h-4 w-4 text-gray-400" />
+                        {formData.moveInDate || '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                        Lease ends
+                      </p>
+                      <p className="mt-1 flex items-center gap-2 text-gray-900 font-medium">
+                        <Calendar className="h-4 w-4 text-gray-400" />
+                        {formData.leaseEndDate || '—'}
+                      </p>
+                    </div>
                   </div>
                 </div>
 

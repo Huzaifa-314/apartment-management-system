@@ -1,4 +1,5 @@
 import { Payment } from '../models/Payment.js';
+import { effectivePaymentStatus } from '../utils/paymentStatus.js';
 
 function formatDate(d) {
   return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -16,7 +17,7 @@ export const notificationController = {
         const dueDate = new Date(payment.dueDate);
         dueDate.setHours(0, 0, 0, 0);
 
-        if (payment.status !== 'paid' && today > dueDate) {
+        if (effectivePaymentStatus(payment) === 'overdue') {
           notifications.push({
             id: `notification-overdue-${payment._id}`,
             userId: req.user.id,
@@ -32,7 +33,7 @@ export const notificationController = {
         const sevenDaysBeforeDue = new Date(dueDate);
         sevenDaysBeforeDue.setDate(sevenDaysBeforeDue.getDate() - 7);
 
-        if (payment.status === 'pending' && today > sevenDaysBeforeDue) {
+        if (effectivePaymentStatus(payment) === 'pending' && today > sevenDaysBeforeDue) {
           notifications.push({
             id: `notification-reminder-${payment._id}`,
             userId: req.user.id,

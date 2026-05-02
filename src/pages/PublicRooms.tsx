@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Building2, MapPin, Maximize, Users, Wifi, Car, Shield, Coffee, Dumbbell, Waves } from 'lucide-react';
+import { Building2, MapPin, Maximize, Users } from 'lucide-react';
 import Button from '../components/shared/Button';
 import Card from '../components/shared/Card';
 import Badge from '../components/shared/Badge';
@@ -11,6 +11,8 @@ import PublicSiteHeader from '../components/shared/PublicSiteHeader';
 import { useAuth } from '../context/AuthContext';
 import { useSiteSettings } from '../context/SiteSettingsContext';
 import { formatCurrency } from '../lib/formatCurrency';
+import { getAmenityIcon } from '../lib/amenityIcon';
+import PublicFooter from '../components/shared/PublicFooter';
 
 const PublicRooms: React.FC = () => {
   const navigate = useNavigate();
@@ -25,7 +27,7 @@ const PublicRooms: React.FC = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const { data } = await api.get<{ rooms: Room[] }>('/api/rooms/public');
+        const { data } = await api.get<{ rooms: Room[] }>('/api/rooms/public?include=all');
         setAvailableRooms(data.rooms);
       } catch {
         setAvailableRooms([]);
@@ -42,29 +44,6 @@ const PublicRooms: React.FC = () => {
     return typeMatch && floorMatch;
   });
 
-  const getAmenityIcon = (amenity: string) => {
-    switch (amenity.toLowerCase()) {
-      case 'wifi':
-      case 'internet':
-        return <Wifi className="h-4 w-4" />;
-      case 'parking':
-        return <Car className="h-4 w-4" />;
-      case 'security':
-        return <Shield className="h-4 w-4" />;
-      case 'cafeteria':
-      case 'cafe':
-        return <Coffee className="h-4 w-4" />;
-      case 'gym':
-      case 'fitness':
-        return <Dumbbell className="h-4 w-4" />;
-      case 'swimming pool':
-      case 'pool':
-        return <Waves className="h-4 w-4" />;
-      default:
-        return <Building2 className="h-4 w-4" />;
-    }
-  };
-
   const getRoomTypeColor = (type: Room['type']) => {
     switch (type) {
       case 'single':
@@ -80,8 +59,11 @@ const PublicRooms: React.FC = () => {
 
   const goToBooking = (room: Room) => {
     saveBookingDraftFromPublicRoom(room);
-    navigate(`/booking/${room.id}`);
+    navigate(`/booking/${room.id}/dates`);
   };
+
+  const visitContactEmail = settings.contactEmail?.trim() || 'info@mastervilla.com';
+  const scheduleVisitMailto = `mailto:${encodeURIComponent(visitContactEmail)}?subject=${encodeURIComponent(`Visit request — ${settings.propertyName}`)}`;
 
   if (loading) {
     return (
@@ -181,7 +163,16 @@ const PublicRooms: React.FC = () => {
                       <span className="text-sm">Floor {room.floor}</span>
                     </div>
                   </div>
-                  <Badge variant="success" size="sm">Available</Badge>
+                  <Badge
+                    variant={room.status === 'vacant' ? 'success' : 'warning'}
+                    size="sm"
+                  >
+                    {room.status === 'vacant'
+                      ? 'Available now'
+                      : room.nextAvailableDate
+                        ? `From ${room.nextAvailableDate}`
+                        : 'Waitlist'}
+                  </Badge>
                 </div>
 
                 {/* Room Metadata */}
@@ -242,25 +233,20 @@ const PublicRooms: React.FC = () => {
                   </div>
                 </div>
 
-                <Button
-                  variant="primary"
-                  fullWidth
-                  onClick={() => goToBooking(room)}
-                >
-                  Book Now
-                </Button>
-
-                {/* Contact Info */}
-                <div className="text-center pt-3 border-t border-gray-100">
-                  <p className="text-xs text-gray-500">
-                    Need more info?{' '}
-                    <a
-                      href={`mailto:${encodeURIComponent(settings.contactEmail)}`}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      Contact us
-                    </a>
-                  </p>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Link to={`/rooms/${room.id}`} className="block flex-1 min-w-0">
+                    <Button variant="secondary" fullWidth>
+                      View details
+                    </Button>
+                  </Link>
+                  <Button
+                    className="flex-1"
+                    variant="primary"
+                    fullWidth
+                    onClick={() => goToBooking(room)}
+                  >
+                    {room.status === 'vacant' ? 'Book now' : 'Reserve'}
+                  </Button>
                 </div>
               </div>
             </Card>
@@ -284,86 +270,53 @@ const PublicRooms: React.FC = () => {
         )}
 
         {/* Call to Action Section */}
-        <div className="mt-16 bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-8 text-white text-center">
-          <h2 className="text-3xl font-bold mb-4">{settings.publicRoomsCtaTitle}</h2>
-          <p className="text-xl text-blue-100 mb-6">{settings.publicRoomsCtaSubtext}</p>
-          <div className="flex justify-center flex-wrap gap-4">
+        <div className="mt-12 rounded-xl bg-gradient-to-r from-blue-600 to-blue-800 p-8 text-center text-white shadow-sm">
+          <h2 className="mb-2 text-2xl font-semibold">{settings.publicRoomsCtaTitle}</h2>
+          <p className="mx-auto mb-6 max-w-2xl text-base text-blue-100">{settings.publicRoomsCtaSubtext}</p>
+          <div className="flex flex-wrap justify-center gap-3">
             {user ? (
-              <a
-                href={`mailto:${encodeURIComponent(settings.contactEmail)}?subject=${encodeURIComponent(`Visit request — ${settings.propertyName}`)}`}
+              <Button
+                href={scheduleVisitMailto}
+                variant="secondary"
+                size="lg"
+                className="!border !border-white/30 !bg-white !text-blue-700 shadow-sm hover:!bg-blue-50"
               >
-                <Button variant="secondary" size="lg">
-                  Schedule Visit
-                </Button>
-              </a>
+                Schedule Visit
+              </Button>
             ) : (
-              <Link to="/login">
-                <Button variant="secondary" size="lg">
-                  Schedule Visit
-                </Button>
-              </Link>
+              <Button
+                to="/login"
+                variant="secondary"
+                size="lg"
+                className="!border !border-white/30 !bg-white !text-blue-700 shadow-sm hover:!bg-blue-50"
+              >
+                Schedule Visit
+              </Button>
             )}
             {user ? (
-              <a href="#rooms-grid">
-                <Button variant="primary" size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
-                  Browse rooms
-                </Button>
-              </a>
+              <Button
+                href="#rooms-grid"
+                variant="primary"
+                size="lg"
+                className="!border !border-white/40 !bg-transparent !text-white hover:!bg-white/15"
+              >
+                Browse rooms
+              </Button>
             ) : (
-              <Link to="/register">
-                <Button variant="primary" size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
-                  Apply Now
-                </Button>
-              </Link>
+              <Button
+                to="/register"
+                variant="primary"
+                size="lg"
+                className="!border !border-white/40 !bg-transparent !text-white hover:!bg-white/15"
+              >
+                Apply Now
+              </Button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8 mt-16">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <Building2 className="h-6 w-6" />
-                <span className="text-xl font-bold">{settings.propertyName}</span>
-              </div>
-              <p className="text-gray-400">{settings.footerTagline}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Contact</h3>
-              <div className="space-y-2 text-gray-400">
-                <p>📞 {settings.phone}</p>
-                <p>✉️ {settings.contactEmail}</p>
-                <p>📍 {settings.footerAddress}</p>
-              </div>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Quick Links</h3>
-              <div className="space-y-2">
-                <Link to={user ? dashboardHref : '/login'} className="block text-gray-400 hover:text-white">
-                  {user ? 'Dashboard' : 'Login'}
-                </Link>
-                <Link to="/rooms#rooms-grid" className="block text-gray-400 hover:text-white">
-                  Browse rooms
-                </Link>
-                <a
-                  href={`mailto:${encodeURIComponent(settings.contactEmail)}`}
-                  className="block text-gray-400 hover:text-white"
-                >
-                  Contact
-                </a>
-              </div>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>
-              &copy; {new Date().getFullYear()} {settings.propertyName}. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 };

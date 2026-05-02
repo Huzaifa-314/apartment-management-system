@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { CreditCard, Download, CheckCircle, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { CreditCard, Download, CheckCircle, AlertCircle, Eye } from 'lucide-react';
 import Navbar from '../../components/shared/Navbar';
 import Card from '../../components/shared/Card';
 import Button from '../../components/shared/Button';
@@ -9,15 +10,37 @@ import { useSiteSettings } from '../../context/SiteSettingsContext';
 import { api } from '../../lib/api';
 import { formatCurrency } from '../../lib/formatCurrency';
 import { selectCurrentPayment } from '../../lib/paymentUtils';
-import { Payment } from '../../types';
+import PaymentDetailsModal from '../../components/shared/PaymentDetailsModal';
+import { Payment, Tenant, Room } from '../../types';
+import { downloadPaymentReceiptPdf } from '../../lib/downloadPaymentReceipt';
 import { format, parseISO } from 'date-fns';
 
 const TenantPayments: React.FC = () => {
   const { user } = useAuth();
   const { settings } = useSiteSettings();
+  const navigate = useNavigate();
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [roomLabels, setRoomLabels] = useState<Record<string, string>>({});
+  const [roomsById, setRoomsById] = useState<Record<string, Room>>({});
+  const [tenantProfile, setTenantProfile] = useState<Tenant | null>(null);
+  const [detailPayment, setDetailPayment] = useState<Payment | null>(null);
+
+  useEffect(() => {
+    if (!user || user.role !== 'tenant') return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await api.get<{ tenant: Tenant }>('/api/tenants/me');
+        if (!cancelled) setTenantProfile(data.tenant);
+      } catch {
+        if (!cancelled) setTenantProfile(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -35,18 +58,55 @@ const TenantPayments: React.FC = () => {
     };
     load();
 
-    // Check if we're returning from Stripe
+    // Returning from Stripe Checkout or SSLCommerz (via API redirect)
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get('session_id');
+    const tranId = params.get('tran_id');
+    const paymentId = params.get('payment_id');
+    const valId = params.get('val_id');
     const cancelled = params.get('cancelled');
+    const failed = params.get('failed');
 
-    if (cancelled) {
+    if (failed) {
+      setError('Payment failed. Please try again.');
+      window.history.replaceState({}, '', '/tenant/payments');
+    } else if (cancelled) {
       setError('Payment was cancelled. Please try again.');
       window.history.replaceState({}, '', '/tenant/payments');
     } else if (sessionId) {
-      confirmPayment(sessionId);
+      confirmStripePayment(sessionId);
+    } else if (tranId && paymentId) {
+      confirmSslPayment(tranId, paymentId, valId);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (payments.length === 0) return;
+    const ids = [...new Set(payments.map((p) => p.roomId))];
+    let cancelled = false;
+    (async () => {
+      const nextLabels: Record<string, string> = {};
+      const nextRooms: Record<string, Room> = {};
+      await Promise.all(
+        ids.map(async (id) => {
+          try {
+            const { data } = await api.get<{ room: Room }>(`/api/rooms/${id}`);
+            nextLabels[id] = `Room ${data.room.number}`;
+            nextRooms[id] = data.room;
+          } catch {
+            nextLabels[id] = `Room ${id.slice(0, 8)}`;
+          }
+        })
+      );
+      if (!cancelled) {
+        setRoomLabels((prev) => ({ ...prev, ...nextLabels }));
+        setRoomsById((prev) => ({ ...prev, ...nextRooms }));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [payments]);
 
   const currentPayment = selectCurrentPayment(payments);
 
@@ -58,29 +118,40 @@ const TenantPayments: React.FC = () => {
     }
   };
 
-  const handlePayNow = async () => {
+  const goToCheckoutConfirmation = () => {
     if (!currentPayment) return;
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { data } = await api.post<{ url: string }>(
-        `/api/payments/${currentPayment.id}/checkout-session`,
-        {}
-      );
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    } catch {
-      setError('Failed to initiate payment. Please try again.');
-      setLoading(false);
-    }
+    navigate(`/tenant/payments/checkout/${currentPayment.id}`);
   };
 
-  const confirmPayment = async (sessionId: string) => {
+  const handleDownloadReceipt = (payment: Payment) => {
+    if (!user || user.role !== 'tenant') return;
+    const tenant = tenantProfile ?? (user as Tenant);
+    const room = roomsById[payment.roomId];
+    downloadPaymentReceiptPdf({
+      payment,
+      currencySymbol: settings.currencySymbol,
+      currencyCode: settings.currencyCode,
+      propertyName: settings.propertyName,
+      tenant: {
+        name: tenant.name,
+        email: tenant.email,
+        phone: tenant.phone,
+        alternatePhone: tenant.alternatePhone,
+      },
+      room: {
+        label: roomLabels[payment.roomId] ?? `Room ${payment.roomId.slice(0, 8)}`,
+        number: room?.number,
+        floor: room?.floor,
+        type: room?.type,
+        area: room?.area,
+      },
+    });
+  };
+
+  const confirmStripePayment = async (sessionId: string) => {
     try {
       const { data } = await api.get<{ ok: boolean; payment: Payment }>(
-        `/api/payments/confirm-checkout?session_id=${sessionId}`
+        `/api/payments/confirm-checkout?session_id=${encodeURIComponent(sessionId)}`
       );
       if (data.ok) {
         setPayments(prev =>
@@ -93,9 +164,75 @@ const TenantPayments: React.FC = () => {
     }
   };
 
+  const confirmSslPayment = async (
+    tranId: string,
+    payId: string,
+    valId: string | null
+  ) => {
+    try {
+      const qs = new URLSearchParams({
+        tran_id: tranId,
+        payment_id: payId,
+      });
+      if (valId) qs.set('val_id', valId);
+      const { data } = await api.get<{ ok: boolean; payment: Payment }>(
+        `/api/payments/confirm-checkout?${qs.toString()}`
+      );
+      if (data.ok) {
+        setPayments(prev =>
+          prev.map(p => (p.id === data.payment.id ? data.payment : p))
+        );
+        window.history.replaceState({}, '', '/tenant/payments');
+      }
+    } catch (err) {
+      console.error('Payment confirmation failed:', err);
+      try {
+        const { data } = await api.get<{ payments: Payment[] }>('/api/payments');
+        const found = data.payments?.find(p => p.id === payId);
+        if (found?.status === 'paid') {
+          setPayments(
+            data.payments.sort(
+              (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
+            )
+          );
+          setError(null);
+          window.history.replaceState({}, '', '/tenant/payments');
+          return;
+        }
+      } catch {
+        /* ignore */
+      }
+      setError('Could not confirm payment. If you were charged, contact support.');
+    }
+  };
+
+  const detailRoom = detailPayment ? roomsById[detailPayment.roomId] : undefined;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
+
+      <PaymentDetailsModal
+        open={!!detailPayment}
+        onOpenChange={(o) => !o && setDetailPayment(null)}
+        payment={detailPayment}
+        currencySymbol={settings.currencySymbol}
+        propertyName={settings.propertyName}
+        tenantName={tenantProfile?.name ?? user?.name ?? '—'}
+        tenantEmail={tenantProfile?.email ?? user?.email}
+        tenantPhone={tenantProfile?.phone ?? user?.phone}
+        tenantAlternatePhone={tenantProfile?.alternatePhone}
+        roomLabel={detailPayment ? roomLabels[detailPayment.roomId] ?? '—' : '—'}
+        roomNumber={detailRoom?.number}
+        roomFloor={detailRoom?.floor}
+        roomType={detailRoom?.type}
+        roomArea={detailRoom?.area}
+        onDownloadPdf={
+          detailPayment?.status === 'paid'
+            ? () => detailPayment && handleDownloadReceipt(detailPayment)
+            : undefined
+        }
+      />
 
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
@@ -154,11 +291,10 @@ const TenantPayments: React.FC = () => {
                   variant="primary"
                   size="lg"
                   leftIcon={<CreditCard className="h-6 w-6" />}
-                  onClick={handlePayNow}
-                  isLoading={loading}
+                  onClick={goToCheckoutConfirmation}
                   className="px-8 py-3"
                 >
-                  Pay {formatCurrency(currentPayment.amount, settings.currencySymbol)} now
+                  Review &amp; pay {formatCurrency(currentPayment.amount, settings.currencySymbol)}
                 </Button>
               </div>
             </div>
@@ -167,7 +303,9 @@ const TenantPayments: React.FC = () => {
               <CreditCard className="h-8 w-8 text-blue-500 mr-3" />
               <div>
                 <p className="font-medium text-gray-900">Secure checkout</p>
-                <p className="text-sm text-gray-500">Your payment is processed by our payment provider</p>
+                <p className="text-sm text-gray-500">
+                  You will confirm on the next screen before going to our payment provider
+                </p>
               </div>
             </div>
           </Card>
@@ -202,6 +340,9 @@ const TenantPayments: React.FC = () => {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Reference
                   </th>
+                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Details
+                  </th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Receipt
                   </th>
@@ -224,9 +365,24 @@ const TenantPayments: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{payment.reference || '—'}</div>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <button
+                        type="button"
+                        className="text-blue-600 hover:text-blue-900 inline-flex"
+                        onClick={() => setDetailPayment(payment)}
+                        aria-label="View payment details"
+                      >
+                        <Eye className="h-5 w-5" />
+                      </button>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      {payment.status === 'paid' && payment.receiptUrl && (
-                        <button className="text-blue-600 hover:text-blue-900">
+                      {payment.status === 'paid' && (
+                        <button
+                          type="button"
+                          className="text-blue-600 hover:text-blue-900"
+                          onClick={() => handleDownloadReceipt(payment)}
+                          aria-label="Download PDF receipt"
+                        >
                           <Download className="h-5 w-5" />
                         </button>
                       )}

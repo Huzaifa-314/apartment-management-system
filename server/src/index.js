@@ -9,6 +9,7 @@ import { initSSLCommerz } from './services/sslcommerz.service.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { initMailer } from './services/email.service.js';
 import { startPaymentReminderCron } from './jobs/paymentReminders.cron.js';
+import { syncPaymentStatuses } from './utils/paymentStatus.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Project root .env then server/.env (later overrides)
@@ -58,6 +59,7 @@ async function main() {
   });
 
   await connectDB();
+  await syncPaymentStatuses().catch((e) => console.error('syncPaymentStatuses', e));
   startPaymentReminderCron();
 
   app.listen(PORT, () => {

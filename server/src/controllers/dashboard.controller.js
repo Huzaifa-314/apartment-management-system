@@ -2,6 +2,7 @@ import { Room } from '../models/Room.js';
 import { Payment } from '../models/Payment.js';
 import { Complaint } from '../models/Complaint.js';
 import { BookingApplication } from '../models/BookingApplication.js';
+import { effectivePaymentStatus } from '../utils/paymentStatus.js';
 
 export const dashboardController = {
   async stats(req, res, next) {
@@ -19,13 +20,13 @@ export const dashboardController = {
       ).length;
 
       const totalRevenue = payments
-        .filter((p) => p.status === 'paid')
+        .filter((p) => effectivePaymentStatus(p) === 'paid')
         .reduce((s, p) => s + p.amount, 0);
       const pendingAmount = payments
-        .filter((p) => p.status === 'pending')
+        .filter((p) => effectivePaymentStatus(p) === 'pending')
         .reduce((s, p) => s + p.amount, 0);
       const overdueAmount = payments
-        .filter((p) => p.status === 'overdue')
+        .filter((p) => effectivePaymentStatus(p) === 'overdue')
         .reduce((s, p) => s + p.amount, 0);
       const totalExpectedRevenue = payments.reduce((s, p) => s + p.amount, 0);
       const collectionRate =
@@ -62,7 +63,7 @@ export const dashboardController = {
       ]);
       const rows = [];
       for (const p of payments) {
-        const st = p.status;
+        const st = effectivePaymentStatus(p);
         rows.push({
           id: `pay-${p._id}`,
           kind: 'payment',

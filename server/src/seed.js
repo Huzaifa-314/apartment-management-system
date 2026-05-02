@@ -173,10 +173,16 @@ async function seed() {
       dueDate.setDate(5);
       let status = 'paid';
       if (m === 0 && payIdx % 3 === 0) status = 'pending';
-      if (m === 0 && payIdx % 5 === 0) status = 'overdue';
       const paymentDate = new Date(dueDate);
       if (status === 'paid') {
         paymentDate.setDate(paymentDate.getDate() - 2);
+      }
+      if (status !== 'paid') {
+        const d0 = new Date(dueDate);
+        d0.setHours(0, 0, 0, 0);
+        const t0 = new Date();
+        t0.setHours(0, 0, 0, 0);
+        status = d0 < t0 ? 'overdue' : 'pending';
       }
       await Payment.create({
         roomId: room._id,

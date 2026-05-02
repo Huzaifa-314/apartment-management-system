@@ -106,16 +106,20 @@ const PaymentTable: React.FC<PaymentTableProps> = ({
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex justify-end space-x-2">
-                  <button 
+                  <button
+                    type="button"
                     className="text-blue-600 hover:text-blue-900"
                     onClick={() => onViewPayment(payment)}
+                    aria-label="View payment"
                   >
                     <Eye className="h-5 w-5" />
                   </button>
                   {payment.status === 'paid' && (
-                    <button 
+                    <button
+                      type="button"
                       className="text-green-600 hover:text-green-900"
                       onClick={() => onDownloadReceipt(payment)}
+                      aria-label="Download receipt"
                     >
                       <Download className="h-5 w-5" />
                     </button>

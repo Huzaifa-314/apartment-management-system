@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { Download, Calendar } from 'lucide-react';
 import Button from '../../components/shared/Button';
@@ -7,8 +7,10 @@ import ConfirmDialog from '../../components/shared/ConfirmDialog';
 import PaymentFormModal, {
   PaymentFormData,
 } from '../../components/admin/modals/PaymentFormModal';
-import PaymentDetailsModal from '../../components/admin/modals/PaymentDetailsModal';
+import PaymentDetailsModal from '../../components/shared/PaymentDetailsModal';
 import { api } from '../../lib/api';
+import { downloadPaymentReceiptPdf } from '../../lib/downloadPaymentReceipt';
+import { useSiteSettings } from '../../context/SiteSettingsContext';
 import { Payment, Room, Tenant } from '../../types';
 
 const PAGE_SIZE = 15;
@@ -22,6 +24,7 @@ type PaymentsApiResponse = {
 };
 
 const AdminPayments: React.FC = () => {
+  const { settings } = useSiteSettings();
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterMonth, setFilterMonth] = useState<string>('all');
   const [page, setPage] = useState(1);
@@ -29,6 +32,7 @@ const AdminPayments: React.FC = () => {
   const [total, setTotal] = useState(0);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [roomNumbers, setRoomNumbers] = useState<Record<string, string>>({});
+  const [roomsById, setRoomsById] = useState<Record<string, Room>>({});
   const [tenantNames, setTenantNames] = useState<Record<string, string>>({});
   const [tenantsList, setTenantsList] = useState<Tenant[]>([]);
   const [roomRentByRoomId, setRoomRentByRoomId] = useState<Record<string, number>>({});
@@ -46,11 +50,14 @@ const AdminPayments: React.FC = () => {
         ]);
         const roomMap: Record<string, string> = {};
         const rentMap: Record<string, number> = {};
+        const roomsMap: Record<string, Room> = {};
         roomsData.rooms.forEach((room) => {
           roomMap[room.id] = `Room ${room.number}`;
           rentMap[room.id] = room.rent;
+          roomsMap[room.id] = room;
         });
         setRoomNumbers(roomMap);
+        setRoomsById(roomsMap);
         setRoomRentByRoomId(rentMap);
         const tenantMap: Record<string, string> = {};
         tenantsData.tenants.forEach((tenant) => {
@@ -60,6 +67,7 @@ const AdminPayments: React.FC = () => {
         setTenantsList(tenantsData.tenants);
       } catch {
         setRoomNumbers({});
+        setRoomsById({});
         setRoomRentByRoomId({});
         setTenantNames({});
         setTenantsList([]);
@@ -140,27 +148,38 @@ const AdminPayments: React.FC = () => {
   };
 
   const handleDownloadReceipt = (payment: Payment) => {
-    const receiptContent = `
-      Receipt for Payment
-      ------------------
-      Date: ${payment.date}
-      Room: ${roomNumbers[payment.roomId]}
-      Tenant: ${tenantNames[payment.tenantId]}
-      Amount: ₹${payment.amount}
-      Reference: ${payment.reference}
-      Status: ${payment.status}
-    `;
-
-    const blob = new Blob([receiptContent], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `receipt-${payment.reference}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+    const tenant = tenantsList.find((t) => t.id === payment.tenantId);
+    const room = roomsById[payment.roomId];
+    downloadPaymentReceiptPdf({
+      payment,
+      currencySymbol: settings.currencySymbol || '৳',
+      currencyCode: settings.currencyCode,
+      propertyName: settings.propertyName,
+      tenant: {
+        name: tenant?.name ?? tenantNames[payment.tenantId] ?? 'Unknown',
+        email: tenant?.email,
+        phone: tenant?.phone,
+        alternatePhone: tenant?.alternatePhone,
+      },
+      room: {
+        label: roomNumbers[payment.roomId] ?? `Room ${payment.roomId.slice(0, 8)}`,
+        number: room?.number,
+        floor: room?.floor,
+        type: room?.type,
+        area: room?.area,
+      },
+    });
   };
+
+  const selectedTenant = useMemo(
+    () =>
+      selectedPayment ? tenantsList.find((t) => t.id === selectedPayment.tenantId) : undefined,
+    [selectedPayment, tenantsList]
+  );
+  const selectedRoom = useMemo(
+    () => (selectedPayment ? roomsById[selectedPayment.roomId] : undefined),
+    [selectedPayment, roomsById]
+  );
 
   const recordTenantName = pendingRecord?.tenantId ? tenantNames[pendingRecord.tenantId] : '';
   const recordRoomLabel = pendingRecord?.roomId ? roomNumbers[pendingRecord.roomId] : '';
@@ -219,8 +238,26 @@ const AdminPayments: React.FC = () => {
         open={!!selectedPayment}
         onOpenChange={(o) => !o && setSelectedPayment(null)}
         payment={selectedPayment}
-        roomNumbers={roomNumbers}
-        tenantNames={tenantNames}
+        currencySymbol={settings.currencySymbol}
+        propertyName={settings.propertyName}
+        tenantName={
+          selectedTenant?.name ??
+          (selectedPayment ? tenantNames[selectedPayment.tenantId] : undefined) ??
+          '—'
+        }
+        tenantEmail={selectedTenant?.email}
+        tenantPhone={selectedTenant?.phone}
+        tenantAlternatePhone={selectedTenant?.alternatePhone}
+        roomLabel={selectedPayment ? roomNumbers[selectedPayment.roomId] ?? '—' : '—'}
+        roomNumber={selectedRoom?.number}
+        roomFloor={selectedRoom?.floor}
+        roomType={selectedRoom?.type}
+        roomArea={selectedRoom?.area}
+        onDownloadPdf={
+          selectedPayment?.status === 'paid'
+            ? () => handleDownloadReceipt(selectedPayment)
+            : undefined
+        }
       />
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">

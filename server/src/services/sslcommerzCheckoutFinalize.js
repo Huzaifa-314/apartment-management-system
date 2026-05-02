@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { BookingApplication } from '../models/BookingApplication.js';
 import { Room } from '../models/Room.js';
+import { canBookRoomForRange } from './roomAvailability.service.js';
 
 async function populateBooking(bid) {
   return BookingApplication.findById(bid).populate('roomId', 'number floor type rent area amenities status');
@@ -32,9 +33,22 @@ export async function finalizeBookingFromSSLCommerzPayment(bookingId, validation
   }
 
   const room = await Room.findById(booking.roomId);
-  if (!room || room.status !== 'vacant') {
+  if (!room) {
     booking.status = 'rejected';
     booking.rejectionReason = 'Room no longer available at payment confirmation';
+    await booking.save();
+    return { result: 'room_unavailable', booking: await populateBooking(booking._id) };
+  }
+
+  const avail = await canBookRoomForRange(
+    room,
+    booking.moveInDate,
+    booking.leaseEndDate,
+    booking._id.toString()
+  );
+  if (!avail.ok) {
+    booking.status = 'rejected';
+    booking.rejectionReason = avail.reason || 'Room no longer available for these dates';
     await booking.save();
     return { result: 'room_unavailable', booking: await populateBooking(booking._id) };
   }

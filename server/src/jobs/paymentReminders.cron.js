@@ -2,10 +2,12 @@ import cron from 'node-cron';
 import { Payment } from '../models/Payment.js';
 import { User } from '../models/User.js';
 import { sendPaymentReminderEmail } from '../services/email.service.js';
+import { syncPaymentStatuses } from '../utils/paymentStatus.js';
 
 export function startPaymentReminderCron() {
   cron.schedule('0 9 * * *', async () => {
     try {
+      await syncPaymentStatuses();
       const payments = await Payment.find({
         status: { $in: ['pending', 'overdue'] },
       });
