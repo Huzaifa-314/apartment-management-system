@@ -1,20 +1,36 @@
 import React from 'react';
 import { Phone, Mail, MessageSquare } from 'lucide-react';
+import toast from 'react-hot-toast';
 import Card from '../shared/Card';
 import Button from '../shared/Button';
+import { useSiteSettings } from '../../context/SiteSettingsContext';
+
+function telHref(phone: string) {
+  const digits = phone.replace(/[^\d+]/g, '');
+  return `tel:${digits || phone}`;
+}
 
 const ContactManagement: React.FC = () => {
+  const { settings } = useSiteSettings();
+
   const handleCall = () => {
-    window.location.href = 'tel:+1234567890';
+    window.location.href = telHref(settings.phone);
+  };
+
+  const handleEmergency = () => {
+    window.location.href = telHref(settings.emergencyPhone);
   };
 
   const handleEmail = () => {
-    window.location.href = 'mailto:management@mastervilla.com';
+    window.location.href = `mailto:${encodeURIComponent(settings.managementEmail)}`;
   };
 
   const handleChat = () => {
-    // Implement chat functionality
-    alert('Chat feature coming soon!');
+    if (settings.liveChatEnabled && settings.liveChatUrl) {
+      window.open(settings.liveChatUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    toast.error('Live chat is not configured. Use phone or email.');
   };
 
   return (
@@ -26,7 +42,7 @@ const ContactManagement: React.FC = () => {
           leftIcon={<Phone className="h-5 w-5" />}
           fullWidth
         >
-          Call Office
+          Call office
         </Button>
         <Button
           variant="secondary"
@@ -34,28 +50,44 @@ const ContactManagement: React.FC = () => {
           leftIcon={<Mail className="h-5 w-5" />}
           fullWidth
         >
-          Send Email
+          Email us
         </Button>
         <Button
           variant="success"
           onClick={handleChat}
           leftIcon={<MessageSquare className="h-5 w-5" />}
           fullWidth
+          disabled={!settings.liveChatEnabled || !settings.liveChatUrl}
         >
-          Live Chat
+          Live chat
         </Button>
       </div>
-      
-      <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-        <h4 className="font-medium text-gray-900 mb-2">Office Hours</h4>
-        <div className="space-y-1 text-sm text-gray-600">
-          <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
-          <p>Saturday: 10:00 AM - 2:00 PM</p>
-          <p>Sunday: Closed</p>
+
+      <div className="mt-6 p-4 bg-gray-50 rounded-lg space-y-3 text-sm text-gray-600">
+        <div>
+          <h4 className="font-medium text-gray-900 mb-1">Office hours</h4>
+          <p className="whitespace-pre-line">{settings.officeHours}</p>
         </div>
-        <p className="mt-4 text-sm text-gray-500">
-          For emergencies outside office hours, please call our 24/7 helpline: +1234567890
-        </p>
+        <div className="pt-2 border-t border-gray-200">
+          <p className="font-medium text-gray-900 mb-1">Main line</p>
+          <button
+            type="button"
+            onClick={handleCall}
+            className="text-blue-600 hover:text-blue-800"
+          >
+            {settings.phone}
+          </button>
+        </div>
+        <div>
+          <p className="font-medium text-gray-900 mb-1">After hours / emergencies</p>
+          <button
+            type="button"
+            onClick={handleEmergency}
+            className="text-blue-600 hover:text-blue-800"
+          >
+            {settings.emergencyPhone}
+          </button>
+        </div>
       </div>
     </Card>
   );

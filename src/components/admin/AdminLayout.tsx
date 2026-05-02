@@ -13,8 +13,11 @@ import {
   X,
   LogOut,
   ChevronDown,
+  Settings,
+  Megaphone,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useSiteSettings } from '../../context/SiteSettingsContext';
 import NotificationBell from '../shared/NotificationBell';
 
 const NAV_ITEMS = [
@@ -25,6 +28,8 @@ const NAV_ITEMS = [
   { to: '/admin/complaints', label: 'Complaints', icon: MessageSquareWarning },
   { to: '/admin/bookings', label: 'Bookings', icon: CalendarCheck },
   { to: '/admin/reports', label: 'Reports', icon: FileBarChart },
+  { to: '/admin/announcements', label: 'Announcements', icon: Megaphone },
+  { to: '/admin/site-settings', label: 'Site settings', icon: Settings },
 ] as const;
 
 const pathTitles: Record<string, string> = {
@@ -35,11 +40,14 @@ const pathTitles: Record<string, string> = {
   '/admin/complaints': 'Complaints',
   '/admin/bookings': 'Bookings',
   '/admin/reports': 'Reports',
+  '/admin/announcements': 'Announcements',
+  '/admin/site-settings': 'Site settings',
   '/admin/profile': 'Profile',
 };
 
 const AdminLayout: React.FC = () => {
   const { user, logout } = useAuth();
+  const { settings } = useSiteSettings();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -64,7 +72,7 @@ const AdminLayout: React.FC = () => {
         }`}
       >
         <div className="h-14 flex items-center justify-between px-4 border-b border-slate-800">
-          <span className="font-semibold tracking-tight">Master Villa</span>
+          <span className="font-semibold tracking-tight">{settings.propertyName}</span>
           <button
             type="button"
             className="lg:hidden p-1 rounded hover:bg-slate-800"

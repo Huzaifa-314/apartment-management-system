@@ -4,9 +4,11 @@ import { Building2, Shield, CreditCard, Users } from 'lucide-react';
 import Button from '../components/shared/Button';
 import PublicSiteHeader from '../components/shared/PublicSiteHeader';
 import { useAuth } from '../context/AuthContext';
+import { useSiteSettings } from '../context/SiteSettingsContext';
 
 const Landing: React.FC = () => {
   const { user } = useAuth();
+  const { settings } = useSiteSettings();
   const dashboardHref = user?.role === 'admin' ? '/admin/dashboard' : '/tenant/dashboard';
   const primaryCtaHref = user ? dashboardHref : '/register';
 
@@ -18,11 +20,9 @@ const Landing: React.FC = () => {
         {/* Hero Section */}
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400">
-            Master Villa
+            {settings.propertyName}
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Premium room management system for modern property management
-          </p>
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">{settings.heroTagline}</p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link to={primaryCtaHref}>
               <Button variant="primary" size="lg">
@@ -80,27 +80,19 @@ const Landing: React.FC = () => {
         {/* Statistics */}
         <div className="bg-blue-600 dark:bg-blue-800 rounded-2xl p-8 mb-16">
           <div className="grid md:grid-cols-3 gap-8 text-white text-center">
-            <div>
-              <div className="text-4xl font-bold mb-2">1000+</div>
-              <div className="text-blue-100">Active Users</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">99.9%</div>
-              <div className="text-blue-100">Uptime</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">24/7</div>
-              <div className="text-blue-100">Support</div>
-            </div>
+            {settings.landingStats.map((s, i) => (
+              <div key={i}>
+                <div className="text-4xl font-bold mb-2">{s.value}</div>
+                <div className="text-blue-100">{s.label}</div>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* CTA Section */}
         <div className="text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to get started?</h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-8">
-            Join thousands of property managers who trust Master Villa
-          </p>
+          <p className="text-gray-600 dark:text-gray-300 mb-8">{settings.ctaSubtext}</p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link to={primaryCtaHref}>
               <Button variant="primary" size="lg">

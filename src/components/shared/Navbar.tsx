@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, User, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useSiteSettings } from '../../context/SiteSettingsContext';
 import NotificationBell from './NotificationBell';
 
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
+  const { settings } = useSiteSettings();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const location = useLocation();
@@ -163,7 +165,7 @@ const Navbar: React.FC = () => {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <Link to="/" className="text-white font-bold text-xl">
-                Master Villa
+                {settings.propertyName}
               </Link>
             </div>
             <div className="hidden md:block">

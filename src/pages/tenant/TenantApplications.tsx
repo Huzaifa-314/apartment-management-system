@@ -5,6 +5,8 @@ import Navbar from '../../components/shared/Navbar';
 import Button from '../../components/shared/Button';
 import Input from '../../components/shared/Input';
 import { api, assetUrl } from '../../lib/api';
+import { formatCurrency } from '../../lib/formatCurrency';
+import { useSiteSettings } from '../../context/SiteSettingsContext';
 import { BookingApplication } from '../../types';
 import { format, parseISO } from 'date-fns';
 
@@ -20,6 +22,7 @@ function applicationDocumentLinks(documents?: BookingApplication['documents']) {
 }
 
 const TenantApplications: React.FC = () => {
+  const { settings } = useSiteSettings();
   const [bookings, setBookings] = useState<BookingApplication[]>([]);
   const [filtered, setFiltered] = useState<BookingApplication[]>([]);
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -170,7 +173,9 @@ const TenantApplications: React.FC = () => {
                             <div className="font-medium text-gray-900">Room {b.room.number}</div>
                             <div className="text-gray-500 text-xs">
                               Floor {b.room.floor} · <span className="capitalize">{b.room.type}</span>
-                              {b.room.rent != null ? ` · ₹${b.room.rent.toLocaleString()}/mo` : ''}
+                              {b.room.rent != null
+                                ? ` · ${formatCurrency(b.room.rent, settings.currencySymbol)}/mo`
+                                : ''}
                             </div>
                           </>
                         ) : (

@@ -9,10 +9,13 @@ import { saveBookingDraftFromPublicRoom } from '../lib/bookingDraft';
 import { Room } from '../types';
 import PublicSiteHeader from '../components/shared/PublicSiteHeader';
 import { useAuth } from '../context/AuthContext';
+import { useSiteSettings } from '../context/SiteSettingsContext';
+import { formatCurrency } from '../lib/formatCurrency';
 
 const PublicRooms: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { settings } = useSiteSettings();
   const dashboardHref = user?.role === 'admin' ? '/admin/dashboard' : '/tenant/dashboard';
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedFloor, setSelectedFloor] = useState<string>('all');
@@ -96,12 +99,9 @@ const PublicRooms: React.FC = () => {
         {/* Hero Section */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Find Your Perfect Room
+            Find your perfect room
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Discover comfortable and affordable rooms at Master Villa. 
-            Modern amenities, prime location, and excellent service.
-          </p>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">{settings.publicRoomsIntro}</p>
         </div>
 
         {/* Filters */}
@@ -231,7 +231,9 @@ const PublicRooms: React.FC = () => {
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="text-sm text-gray-600">Monthly Rent</p>
-                      <p className="text-2xl font-bold text-blue-600">₹{room.rent.toLocaleString()}</p>
+                      <p className="text-2xl font-bold text-blue-600">
+                        {formatCurrency(room.rent, settings.currencySymbol)}
+                      </p>
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-gray-500">Includes</p>
@@ -252,7 +254,10 @@ const PublicRooms: React.FC = () => {
                 <div className="text-center pt-3 border-t border-gray-100">
                   <p className="text-xs text-gray-500">
                     Need more info?{' '}
-                    <a href="mailto:info@mastervilla.com" className="text-blue-600 hover:text-blue-800">
+                    <a
+                      href={`mailto:${encodeURIComponent(settings.contactEmail)}`}
+                      className="text-blue-600 hover:text-blue-800"
+                    >
                       Contact us
                     </a>
                   </p>
@@ -280,13 +285,13 @@ const PublicRooms: React.FC = () => {
 
         {/* Call to Action Section */}
         <div className="mt-16 bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-8 text-white text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Move In?</h2>
-          <p className="text-xl text-blue-100 mb-6">
-            Join hundreds of satisfied residents at Master Villa
-          </p>
+          <h2 className="text-3xl font-bold mb-4">{settings.publicRoomsCtaTitle}</h2>
+          <p className="text-xl text-blue-100 mb-6">{settings.publicRoomsCtaSubtext}</p>
           <div className="flex justify-center flex-wrap gap-4">
             {user ? (
-              <a href="mailto:info@mastervilla.com?subject=Visit%20request%20%E2%80%94%20Master%20Villa">
+              <a
+                href={`mailto:${encodeURIComponent(settings.contactEmail)}?subject=${encodeURIComponent(`Visit request — ${settings.propertyName}`)}`}
+              >
                 <Button variant="secondary" size="lg">
                   Schedule Visit
                 </Button>
@@ -322,18 +327,16 @@ const PublicRooms: React.FC = () => {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <Building2 className="h-6 w-6" />
-                <span className="text-xl font-bold">Master Villa</span>
+                <span className="text-xl font-bold">{settings.propertyName}</span>
               </div>
-              <p className="text-gray-400">
-                Premium room management system for modern living.
-              </p>
+              <p className="text-gray-400">{settings.footerTagline}</p>
             </div>
             <div>
               <h3 className="font-semibold mb-4">Contact</h3>
               <div className="space-y-2 text-gray-400">
-                <p>📞 +91 12345 67890</p>
-                <p>✉️ info@mastervilla.com</p>
-                <p>📍 123 Main Street, City</p>
+                <p>📞 {settings.phone}</p>
+                <p>✉️ {settings.contactEmail}</p>
+                <p>📍 {settings.footerAddress}</p>
               </div>
             </div>
             <div>
@@ -345,14 +348,19 @@ const PublicRooms: React.FC = () => {
                 <Link to="/rooms#rooms-grid" className="block text-gray-400 hover:text-white">
                   Browse rooms
                 </Link>
-                <a href="mailto:info@mastervilla.com" className="block text-gray-400 hover:text-white">
+                <a
+                  href={`mailto:${encodeURIComponent(settings.contactEmail)}`}
+                  className="block text-gray-400 hover:text-white"
+                >
                   Contact
                 </a>
               </div>
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 Master Villa. All rights reserved.</p>
+            <p>
+              &copy; {new Date().getFullYear()} {settings.propertyName}. All rights reserved.
+            </p>
           </div>
         </div>
       </footer>

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Building2, Home, LayoutDashboard, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useSiteSettings } from '../../context/SiteSettingsContext';
 import Button from './Button';
 
 type PublicSiteHeaderProps = {
@@ -11,6 +12,7 @@ type PublicSiteHeaderProps = {
 
 const PublicSiteHeader: React.FC<PublicSiteHeaderProps> = ({ variant = 'rooms' }) => {
   const { user, loading, logout } = useAuth();
+  const { settings } = useSiteSettings();
 
   const dashboardHref = user?.role === 'admin' ? '/admin/dashboard' : '/tenant/dashboard';
 
@@ -24,7 +26,7 @@ const PublicSiteHeader: React.FC<PublicSiteHeaderProps> = ({ variant = 'rooms' }
             ) : (
               <Building2 className="h-8 w-8 text-blue-600 shrink-0" />
             )}
-            <span className="text-2xl font-bold text-gray-900">Master Villa</span>
+            <span className="text-2xl font-bold text-gray-900">{settings.propertyName}</span>
           </Link>
 
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">

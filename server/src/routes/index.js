@@ -11,6 +11,8 @@ import { bookingController } from '../controllers/booking.controller.js';
 import { dashboardController } from '../controllers/dashboard.controller.js';
 import { notificationController } from '../controllers/notification.controller.js';
 import { sslcommerzIPNController } from '../controllers/sslcommerz.ipn.controller.js';
+import { siteSettingsController } from '../controllers/siteSettings.controller.js';
+import { announcementController } from '../controllers/announcement.controller.js';
 
 export function createRouter(env) {
   const router = express.Router();
@@ -28,6 +30,9 @@ export function createRouter(env) {
 
   router.get('/auth/me', authMw, auth.me.bind(auth));
 
+  router.get('/site-settings', siteSettingsController.getPublic);
+  router.get('/announcements', announcementController.listPublic);
+
   router.get('/rooms/public', roomController.listPublic);
   router.get('/rooms/:id', roomController.getById);
   router.get('/rooms', authMw, adminOnly, roomController.listAll);
@@ -37,6 +42,12 @@ export function createRouter(env) {
 
   router.get('/dashboard/stats', authMw, adminOnly, dashboardController.stats);
   router.get('/dashboard/activity', authMw, adminOnly, dashboardController.activity);
+
+  router.patch('/site-settings', authMw, adminOnly, express.json(), siteSettingsController.patch);
+  router.get('/announcements/admin', authMw, adminOnly, announcementController.listAdmin);
+  router.post('/announcements', authMw, adminOnly, express.json(), announcementController.create);
+  router.patch('/announcements/:id', authMw, adminOnly, express.json(), announcementController.update);
+  router.delete('/announcements/:id', authMw, adminOnly, announcementController.remove);
 
   router.get('/tenants', authMw, adminOnly, tenantController.list);
   router.get('/tenants/me', authMw, tenantOnly, tenantController.me);

@@ -1,40 +1,30 @@
 import React from 'react';
 import { AlertCircle, Info, Wrench } from 'lucide-react';
 import Card from '../shared/Card';
+import type { AnnouncementItem } from '../../types';
 
-interface Announcement {
-  id: string;
-  title: string;
-  message: string;
-  type: 'urgent' | 'maintenance' | 'info';
-  date: string;
-}
+type Props = {
+  announcements: AnnouncementItem[];
+  loading?: boolean;
+};
 
-const announcements: Announcement[] = [
-  {
-    id: '1',
-    title: 'Scheduled Water Maintenance',
-    message: 'Water supply will be interrupted on Saturday from 10 AM to 2 PM for routine maintenance.',
-    type: 'maintenance',
-    date: '2024-03-20'
-  },
-  {
-    id: '2',
-    title: 'New Security Measures',
-    message: 'We have upgraded our security system. Please collect your new access cards from the management office.',
-    type: 'info',
-    date: '2024-03-19'
-  },
-  {
-    id: '3',
-    title: 'Emergency: Power Backup Testing',
-    message: 'Emergency power backup system testing scheduled for tomorrow at 3 PM.',
-    type: 'urgent',
-    date: '2024-03-18'
+const Announcements: React.FC<Props> = ({ announcements, loading }) => {
+  if (loading) {
+    return (
+      <Card title="Notices & Announcements" className="bg-white shadow-lg">
+        <p className="text-sm text-gray-500 py-6 text-center">Loading notices…</p>
+      </Card>
+    );
   }
-];
 
-const Announcements: React.FC = () => {
+  if (announcements.length === 0) {
+    return (
+      <Card title="Notices & Announcements" className="bg-white shadow-lg">
+        <p className="text-sm text-gray-500 py-4 text-center">No active announcements.</p>
+      </Card>
+    );
+  }
+
   return (
     <Card title="Notices & Announcements" className="bg-white shadow-lg">
       <div className="space-y-4">
@@ -45,8 +35,8 @@ const Announcements: React.FC = () => {
               announcement.type === 'urgent'
                 ? 'bg-red-50 border-red-500'
                 : announcement.type === 'maintenance'
-                ? 'bg-amber-50 border-amber-500'
-                : 'bg-blue-50 border-blue-500'
+                  ? 'bg-amber-50 border-amber-500'
+                  : 'bg-blue-50 border-blue-500'
             }`}
           >
             <div className="flex items-start">
@@ -59,10 +49,18 @@ const Announcements: React.FC = () => {
                   <Info className="h-5 w-5 text-blue-500" />
                 )}
               </div>
-              <div className="ml-3">
+              <div className="ml-3 min-w-0">
                 <h3 className="text-sm font-medium text-gray-900">{announcement.title}</h3>
                 <p className="mt-1 text-sm text-gray-600">{announcement.message}</p>
-                <p className="mt-2 text-xs text-gray-500">{new Date(announcement.date).toLocaleDateString()}</p>
+                <p className="mt-2 text-xs text-gray-500">
+                  {announcement.date
+                    ? new Date(announcement.date).toLocaleDateString(undefined, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })
+                    : ''}
+                </p>
               </div>
             </div>
           </div>

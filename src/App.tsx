@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { SiteSettingsProvider } from './context/SiteSettingsContext';
 
 // Pages
 import Landing from './pages/Landing';
@@ -18,6 +19,8 @@ import AdminTenants from './pages/admin/AdminTenants';
 import AdminBookings from './pages/admin/AdminBookings';
 import AdminReports from './pages/admin/AdminReports';
 import AdminProfile from './pages/admin/AdminProfile';
+import AdminSiteSettings from './pages/admin/AdminSiteSettings';
+import AdminAnnouncements from './pages/admin/AdminAnnouncements';
 import AdminLayout from './components/admin/AdminLayout';
 import TenantDashboard from './pages/tenant/TenantDashboard';
 import TenantComplaints from './pages/tenant/TenantComplaints';
@@ -57,11 +60,12 @@ const ProtectedRoute = ({ children, allowedRole }: { children: React.ReactNode; 
 function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <NotificationProvider>
-          <Router>
-            <Toaster position="top-right" />
-            <Routes>
+      <SiteSettingsProvider>
+        <AuthProvider>
+          <NotificationProvider>
+            <Router>
+              <Toaster position="top-right" />
+              <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Landing />} />
               <Route path="/rooms" element={<PublicRooms />} />
@@ -103,6 +107,8 @@ function App() {
                 <Route path="tenants" element={<AdminTenants />} />
                 <Route path="bookings" element={<AdminBookings />} />
                 <Route path="reports" element={<AdminReports />} />
+                <Route path="site-settings" element={<AdminSiteSettings />} />
+                <Route path="announcements" element={<AdminAnnouncements />} />
                 <Route path="profile" element={<AdminProfile />} />
               </Route>
 
@@ -132,6 +138,14 @@ function App() {
                 } 
               />
               <Route
+                path="/tenant/payments/success"
+                element={
+                  <ProtectedRoute allowedRole="tenant">
+                    <TenantPayments />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/tenant/profile"
                 element={
                   <ProtectedRoute allowedRole="tenant">
@@ -150,10 +164,11 @@ function App() {
 
               {/* Fallback */}
               <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Router>
-        </NotificationProvider>
-      </AuthProvider>
+              </Routes>
+            </Router>
+          </NotificationProvider>
+        </AuthProvider>
+      </SiteSettingsProvider>
     </ThemeProvider>
   );
 }

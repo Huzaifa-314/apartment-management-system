@@ -5,12 +5,16 @@ import Card from '../../components/shared/Card';
 import Button from '../../components/shared/Button';
 import StatusIndicator from '../../components/shared/StatusIndicator';
 import { useAuth } from '../../context/AuthContext';
+import { useSiteSettings } from '../../context/SiteSettingsContext';
 import { api } from '../../lib/api';
+import { formatCurrency } from '../../lib/formatCurrency';
+import { selectCurrentPayment } from '../../lib/paymentUtils';
 import { Payment } from '../../types';
 import { format, parseISO } from 'date-fns';
 
 const TenantPayments: React.FC = () => {
   const { user } = useAuth();
+  const { settings } = useSiteSettings();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +48,7 @@ const TenantPayments: React.FC = () => {
     }
   }, [user]);
 
-  const currentPayment = payments.find(p => p.status === 'pending' || p.status === 'overdue');
+  const currentPayment = selectCurrentPayment(payments);
 
   const formatDate = (dateString: string) => {
     try {
@@ -102,7 +106,9 @@ const TenantPayments: React.FC = () => {
           {currentPayment && (
             <div className="text-right">
               <p className="text-sm text-gray-600">Current Balance</p>
-              <p className="text-2xl font-bold text-gray-900">₹{currentPayment.amount.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {formatCurrency(currentPayment.amount, settings.currencySymbol)}
+              </p>
             </div>
           )}
         </div>
@@ -122,14 +128,16 @@ const TenantPayments: React.FC = () => {
           <Card className="mb-8 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Make Payment</h2>
-              <p className="text-gray-600">Pay your rent securely with Stripe</p>
+              <p className="text-gray-600">Pay your rent securely online</p>
             </div>
 
             <div className="bg-white rounded-lg p-6 mb-6 shadow-sm">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div className="text-center p-4 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-500 mb-1">Amount Due</p>
-                  <p className="text-2xl font-bold text-blue-600">₹{currentPayment.amount.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {formatCurrency(currentPayment.amount, settings.currencySymbol)}
+                  </p>
                 </div>
                 <div className="text-center p-4 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-500 mb-1">Due Date</p>
@@ -150,7 +158,7 @@ const TenantPayments: React.FC = () => {
                   isLoading={loading}
                   className="px-8 py-3"
                 >
-                  Pay ₹{currentPayment.amount.toLocaleString()} Now
+                  Pay {formatCurrency(currentPayment.amount, settings.currencySymbol)} now
                 </Button>
               </div>
             </div>
@@ -158,8 +166,8 @@ const TenantPayments: React.FC = () => {
             <div className="flex items-center p-3 bg-white rounded-lg shadow-sm">
               <CreditCard className="h-8 w-8 text-blue-500 mr-3" />
               <div>
-                <p className="font-medium text-gray-900">Stripe Payment Processing</p>
-                <p className="text-sm text-gray-500">Secure payment gateway</p>
+                <p className="font-medium text-gray-900">Secure checkout</p>
+                <p className="text-sm text-gray-500">Your payment is processed by our payment provider</p>
               </div>
             </div>
           </Card>
@@ -207,7 +215,7 @@ const TenantPayments: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        ₹{payment.amount.toLocaleString()}
+                        {formatCurrency(payment.amount, settings.currencySymbol)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

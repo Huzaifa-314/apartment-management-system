@@ -91,6 +91,43 @@ export type FinancialSummary = {
   occupancyRate: number;
 };
 
+export type SiteSettings = {
+  id: string;
+  propertyName: string;
+  contactEmail: string;
+  managementEmail: string;
+  phone: string;
+  emergencyPhone: string;
+  officeHours: string;
+  currencySymbol: string;
+  currencyCode: string;
+  liveChatEnabled: boolean;
+  liveChatUrl: string;
+  heroTagline: string;
+  ctaSubtext: string;
+  publicRoomsIntro: string;
+  publicRoomsCtaTitle: string;
+  publicRoomsCtaSubtext: string;
+  footerTagline: string;
+  footerAddress: string;
+  landingStats: { value: string; label: string }[];
+  updatedAt?: string;
+};
+
+export type AnnouncementItem = {
+  id: string;
+  title: string;
+  message: string;
+  type: 'urgent' | 'maintenance' | 'info';
+  date: string;
+  isPublished?: boolean;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  sortOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type BookingApplication = {
   id: string;
   room: Room | null;

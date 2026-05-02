@@ -6,6 +6,8 @@ import { Room } from './models/Room.js';
 import { Payment } from './models/Payment.js';
 import { Complaint } from './models/Complaint.js';
 import { BookingApplication } from './models/BookingApplication.js';
+import { SiteSettings } from './models/SiteSettings.js';
+import { Announcement } from './models/Announcement.js';
 import { hashPassword } from './services/auth.service.js';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/room-management';
@@ -58,6 +60,8 @@ async function seed() {
     Payment.deleteMany({}),
     Complaint.deleteMany({}),
     BookingApplication.deleteMany({}),
+    SiteSettings.deleteMany({}),
+    Announcement.deleteMany({}),
   ]);
 
   const hp = await hashPassword(SEED_PASSWORD);
@@ -71,6 +75,52 @@ async function seed() {
     profileImage: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg',
   });
   console.log('Admin:', admin.email);
+
+  await SiteSettings.create({
+    key: 'default',
+    propertyName: 'Master Villa',
+    contactEmail: 'info@mastervilla.com',
+    managementEmail: 'management@mastervilla.com',
+    phone: '+1 234 567 890',
+    emergencyPhone: '+1 234 567 891',
+    officeHours: 'Mon–Fri 9:00 AM – 5:00 PM',
+    currencySymbol: '৳',
+    currencyCode: 'BDT',
+    liveChatEnabled: false,
+    liveChatUrl: '',
+    heroTagline: 'Premium room management system for modern property management',
+    ctaSubtext:
+      'Join residents who use our building portal for a simpler rental experience.',
+    publicRoomsIntro:
+      'Discover comfortable and affordable rooms. Modern amenities, prime location, and excellent service.',
+    publicRoomsCtaTitle: 'Ready to Move In?',
+    publicRoomsCtaSubtext: 'Reach out to schedule a visit or apply for the room you like.',
+    footerTagline: 'Modern room management and resident self-service in one place.',
+    footerAddress: '123 Main Street, City',
+    landingStats: [
+      { value: '12+', label: 'Rooms' },
+      { value: '24/7', label: 'Online access' },
+      { value: '100%', label: 'Digital records' },
+    ],
+  });
+
+  await Announcement.create([
+    {
+      title: 'Scheduled Water Maintenance',
+      message:
+        'Water supply may be interrupted on Saturday from 10:00 AM to 2:00 PM for routine maintenance.',
+      type: 'maintenance',
+      isPublished: true,
+      sortOrder: 2,
+    },
+    {
+      title: 'New Security Measures',
+      message: 'We have upgraded our access system. Please collect updated access cards from the management office during office hours.',
+      type: 'info',
+      isPublished: true,
+      sortOrder: 1,
+    },
+  ]);
 
   const roomDocs = [];
   for (const r of buildRooms()) {
