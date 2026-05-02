@@ -16,6 +16,9 @@ import AdminPayments from './pages/admin/AdminPayments';
 import AdminComplaints from './pages/admin/AdminComplaints';
 import AdminTenants from './pages/admin/AdminTenants';
 import AdminBookings from './pages/admin/AdminBookings';
+import AdminReports from './pages/admin/AdminReports';
+import AdminProfile from './pages/admin/AdminProfile';
+import AdminLayout from './components/admin/AdminLayout';
 import TenantDashboard from './pages/tenant/TenantDashboard';
 import TenantComplaints from './pages/tenant/TenantComplaints';
 import TenantPayments from './pages/tenant/TenantPayments';
@@ -83,56 +86,25 @@ function App() {
                 }
               />
 
-              {/* Admin Routes */}
-              <Route 
-                path="/admin/dashboard" 
-                element={
-                  <ProtectedRoute allowedRole="admin">
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/admin/rooms" 
-                element={
-                  <ProtectedRoute allowedRole="admin">
-                    <AdminRooms />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/admin/payments" 
-                element={
-                  <ProtectedRoute allowedRole="admin">
-                    <AdminPayments />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/admin/complaints" 
-                element={
-                  <ProtectedRoute allowedRole="admin">
-                    <AdminComplaints />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/admin/tenants" 
-                element={
-                  <ProtectedRoute allowedRole="admin">
-                    <AdminTenants />
-                  </ProtectedRoute>
-                } 
-              />
-
+              {/* Admin Routes — traditional sidebar layout */}
               <Route
-                path="/admin/bookings"
+                path="/admin"
                 element={
                   <ProtectedRoute allowedRole="admin">
-                    <AdminBookings />
+                    <AdminLayout />
                   </ProtectedRoute>
                 }
-              />
+              >
+                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="rooms" element={<AdminRooms />} />
+                <Route path="payments" element={<AdminPayments />} />
+                <Route path="complaints" element={<AdminComplaints />} />
+                <Route path="tenants" element={<AdminTenants />} />
+                <Route path="bookings" element={<AdminBookings />} />
+                <Route path="reports" element={<AdminReports />} />
+                <Route path="profile" element={<AdminProfile />} />
+              </Route>
 
               {/* Tenant Routes */}
               <Route 

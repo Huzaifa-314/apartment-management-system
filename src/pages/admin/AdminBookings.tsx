@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, X, CheckCircle, XCircle, Eye } from 'lucide-react';
-import Navbar from '../../components/shared/Navbar';
 import Button from '../../components/shared/Button';
 import Input from '../../components/shared/Input';
+import toast from 'react-hot-toast';
 import { api } from '../../lib/api';
+import ConfirmDialog from '../../components/shared/ConfirmDialog';
 
 interface BookingApplication {
   _id: string;
@@ -44,6 +45,8 @@ const AdminBookings: React.FC = () => {
   const [selectedBooking, setSelectedBooking] = useState<BookingApplication | null>(null);
   const [rejectBooking, setRejectBooking] = useState<BookingApplication | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [pendingApproveId, setPendingApproveId] = useState<string | null>(null);
+  const [rejectSubmitConfirm, setRejectSubmitConfirm] = useState(false);
 
   const loadBookings = useCallback(async () => {
     setLoading(true);
@@ -77,12 +80,13 @@ const AdminBookings: React.FC = () => {
       if (selectedBooking?._id === id) {
         setSelectedBooking(data.booking);
       }
-    } catch {
-      /* ignore */
+    } catch (e) {
+      toast.error('Could not approve application');
+      throw e;
     }
   };
 
-  const confirmReject = async () => {
+  const performReject = async () => {
     if (!rejectBooking) return;
     try {
       const { data } = await api.patch<{ booking: BookingApplication }>(
@@ -100,8 +104,9 @@ const AdminBookings: React.FC = () => {
       }
       setRejectBooking(null);
       setRejectReason('');
-    } catch {
-      /* ignore */
+    } catch (e) {
+      toast.error('Could not reject application');
+      throw e;
     }
   };
 
@@ -115,11 +120,52 @@ const AdminBookings: React.FC = () => {
   const statusLabel = (status: string) =>
     status === 'pending_payment' ? 'Awaiting payment' : status;
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
+  const pendingApprove = pendingApproveId
+    ? bookings.find((b) => b._id === pendingApproveId) || selectedBooking
+    : null;
 
-      <div className="container mx-auto px-4 py-8">
+  return (
+    <>
+      <ConfirmDialog
+        open={!!pendingApproveId}
+        onOpenChange={(o) => !o && setPendingApproveId(null)}
+        title="Approve this application?"
+        description={
+          pendingApprove ? (
+            <p>
+              This will create the tenant and assign them to the selected room for{' '}
+              <span className="font-medium text-gray-900">{pendingApprove.name}</span>.
+            </p>
+          ) : null
+        }
+        confirmLabel="Approve"
+        variant="primary"
+        onConfirm={async () => {
+          if (!pendingApproveId) return;
+          await handleApprove(pendingApproveId);
+        }}
+      />
+
+      <ConfirmDialog
+        open={rejectSubmitConfirm}
+        onOpenChange={(o) => !o && setRejectSubmitConfirm(false)}
+        title="Reject this application?"
+        description={
+          rejectBooking ? (
+            <p>
+              The applicant will see this as rejected
+              {rejectReason.trim() ? ` with your note: "${rejectReason.trim().slice(0, 200)}${rejectReason.trim().length > 200 ? '…' : ''}"` : ''}.
+            </p>
+          ) : null
+        }
+        confirmLabel="Reject application"
+        variant="danger"
+        onConfirm={async () => {
+          await performReject();
+          setRejectSubmitConfirm(false);
+        }}
+      />
+
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Booking Applications</h1>
           <p className="text-gray-600">Review and manage room booking requests</p>
@@ -238,7 +284,7 @@ const AdminBookings: React.FC = () => {
                               <>
                                 <button
                                   type="button"
-                                  onClick={() => handleApprove(booking._id)}
+                                  onClick={() => setPendingApproveId(booking._id)}
                                   className="p-1.5 text-green-600 hover:bg-green-50 rounded"
                                   title="Approve"
                                 >
@@ -307,7 +353,6 @@ const AdminBookings: React.FC = () => {
             </div>
           </div>
         )}
-      </div>
 
       {selectedBooking && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
@@ -430,7 +475,7 @@ const AdminBookings: React.FC = () => {
                   <Button
                     variant="primary"
                     type="button"
-                    onClick={() => handleApprove(selectedBooking._id)}
+                    onClick={() => setPendingApproveId(selectedBooking._id)}
                   >
                     Approve
                   </Button>
@@ -481,14 +526,19 @@ const AdminBookings: React.FC = () => {
               >
                 Cancel
               </Button>
-              <Button variant="primary" type="button" onClick={confirmReject} className="bg-red-600 hover:bg-red-700">
+              <Button
+                variant="primary"
+                type="button"
+                onClick={() => setRejectSubmitConfirm(true)}
+                className="bg-red-600 hover:bg-red-700"
+              >
                 Reject application
               </Button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

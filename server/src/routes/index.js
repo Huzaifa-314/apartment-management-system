@@ -36,6 +36,7 @@ export function createRouter(env) {
   router.delete('/rooms/:id', authMw, adminOnly, roomController.delete);
 
   router.get('/dashboard/stats', authMw, adminOnly, dashboardController.stats);
+  router.get('/dashboard/activity', authMw, adminOnly, dashboardController.activity);
 
   router.get('/tenants', authMw, adminOnly, tenantController.list);
   router.get('/tenants/me', authMw, tenantOnly, tenantController.me);
@@ -69,6 +70,13 @@ export function createRouter(env) {
   );
 
   router.get('/complaints', authMw, complaint.list.bind(complaint));
+  router.post(
+    '/complaints/admin',
+    authMw,
+    adminOnly,
+    express.json(),
+    complaint.createByAdmin.bind(complaint)
+  );
   router.post('/complaints', authMw, tenantOnly, express.json(), complaint.create.bind(complaint));
   router.patch('/complaints/:id', authMw, adminOnly, express.json(), complaint.update.bind(complaint));
 

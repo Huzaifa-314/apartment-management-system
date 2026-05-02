@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, User } from 'lucide-react';
-import Navbar from '../../components/shared/Navbar';
 import RoomCard from '../../components/admin/RoomCard';
 import Button from '../../components/shared/Button';
 import Input from '../../components/shared/Input';
 import Card from '../../components/shared/Card';
+import toast from 'react-hot-toast';
 import { api } from '../../lib/api';
+import ConfirmDialog from '../../components/shared/ConfirmDialog';
 import { Room, Tenant } from '../../types';
 
 const AMENITY_OPTIONS = ['Water Supply', 'Electricity', 'Air Conditioning', 'Balcony', 'Premium Furnishing'];
@@ -42,6 +43,7 @@ const AdminRooms: React.FC = () => {
     amenities: [] as string[],
   });
   const [deleteConfirmRoom, setDeleteConfirmRoom] = useState<Room | null>(null);
+  const [addRoomConfirmOpen, setAddRoomConfirmOpen] = useState(false);
 
   const [tenantsList, setTenantsList] = useState<Tenant[]>([]);
 
@@ -69,23 +71,7 @@ const AdminRooms: React.FC = () => {
     load();
   }, []);
 
-  const handleAddRoom = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const { data } = await api.post<{ room: Room }>('/api/rooms', {
-        number: newRoomData.number,
-        floor: parseInt(newRoomData.floor, 10),
-        type: newRoomData.type,
-        rent: parseInt(newRoomData.rent, 10),
-        status: 'vacant',
-        area: parseInt(newRoomData.area, 10),
-        amenities: newRoomData.amenities,
-      });
-      setAllRooms(prev => [...prev, data.room]);
-    } catch {
-      /* ignore */
-    }
-    setShowAddRoom(false);
+  const resetNewRoomForm = () => {
     setNewRoomData({
       number: '',
       floor: '1',
@@ -94,6 +80,26 @@ const AdminRooms: React.FC = () => {
       area: '',
       amenities: [],
     });
+  };
+
+  const onAddRoomFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAddRoomConfirmOpen(true);
+  };
+
+  const executeAddRoom = async () => {
+    const { data } = await api.post<{ room: Room }>('/api/rooms', {
+      number: newRoomData.number,
+      floor: parseInt(newRoomData.floor, 10),
+      type: newRoomData.type,
+      rent: parseInt(newRoomData.rent, 10),
+      status: 'vacant',
+      area: parseInt(newRoomData.area, 10),
+      amenities: newRoomData.amenities,
+    });
+    setAllRooms((prev) => [...prev, data.room]);
+    setShowAddRoom(false);
+    resetNewRoomForm();
   };
 
   const handleViewDetails = (room: Room) => {
@@ -134,15 +140,11 @@ const AdminRooms: React.FC = () => {
     setEditingRoom(null);
   };
 
-  const handleDeleteConfirm = async () => {
+  const executeDeleteRoom = async () => {
     if (!deleteConfirmRoom) return;
-    try {
-      await api.delete(`/api/rooms/${deleteConfirmRoom.id}`);
-      setAllRooms(prev => prev.filter(r => r.id !== deleteConfirmRoom.id));
-    } catch {
-      /* ignore */
-    }
-    setDeleteConfirmRoom(null);
+    await api.delete(`/api/rooms/${deleteConfirmRoom.id}`);
+    const id = deleteConfirmRoom.id;
+    setAllRooms((prev) => prev.filter((r) => r.id !== id));
   };
 
   const getTenant = (roomId: string) => {
@@ -176,10 +178,45 @@ const AdminRooms: React.FC = () => {
   }, [searchQuery, filterStatus, filterFloor, filterType, allRooms]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      
-      <div className="container mx-auto px-4 py-8">
+    <>
+      <ConfirmDialog
+        open={addRoomConfirmOpen}
+        onOpenChange={(o) => !o && setAddRoomConfirmOpen(false)}
+        title="Create this room?"
+        description={
+          <p>
+            Room <span className="font-medium">{newRoomData.number || '—'}</span>, floor {newRoomData.floor}, rent ₹
+            {newRoomData.rent || '—'}/mo will be added as vacant.
+          </p>
+        }
+        confirmLabel="Create room"
+        onConfirm={async () => {
+          try {
+            await executeAddRoom();
+          } catch (e) {
+            toast.error('Could not create room');
+            throw e;
+          }
+        }}
+      />
+
+      <ConfirmDialog
+        open={!!deleteConfirmRoom}
+        onOpenChange={(o) => !o && setDeleteConfirmRoom(null)}
+        title={deleteConfirmRoom ? `Delete room ${deleteConfirmRoom.number}?` : 'Delete room?'}
+        description="This action cannot be undone."
+        variant="danger"
+        confirmLabel="Delete room"
+        onConfirm={async () => {
+          try {
+            await executeDeleteRoom();
+          } catch (e) {
+            toast.error('Could not delete room');
+            throw e;
+          }
+        }}
+      />
+
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Room Management</h1>
@@ -197,7 +234,7 @@ const AdminRooms: React.FC = () => {
         {/* Add Room Modal */}
         {showAddRoom && (
           <Card className="mb-8">
-            <form onSubmit={handleAddRoom} className="space-y-4">
+            <form onSubmit={onAddRoomFormSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                   label="Room Number"
@@ -476,22 +513,6 @@ const AdminRooms: React.FC = () => {
           </Card>
         )}
 
-        {/* Delete Confirmation */}
-        {deleteConfirmRoom && (
-          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-sm w-full shadow-xl mx-4">
-              <h3 className="text-lg font-semibold mb-2">Delete Room {deleteConfirmRoom.number}?</h3>
-              <p className="text-gray-600 mb-6">This action cannot be undone.</p>
-              <div className="flex justify-end gap-3">
-                <Button variant="secondary" onClick={() => setDeleteConfirmRoom(null)}>Cancel</Button>
-                <Button variant="primary" onClick={handleDeleteConfirm} className="bg-red-600 hover:bg-red-700">
-                  Delete
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Filters and Search */}
         <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -582,8 +603,7 @@ const AdminRooms: React.FC = () => {
             </p>
           </div>
         )}
-      </div>
-    </div>
+    </>
   );
 };
 

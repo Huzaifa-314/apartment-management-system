@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import { Download, Calendar, X } from 'lucide-react';
-import Navbar from '../../components/shared/Navbar';
 import Button from '../../components/shared/Button';
 import Input from '../../components/shared/Input';
 import PaymentTable from '../../components/admin/PaymentTable';
+import ConfirmDialog from '../../components/shared/ConfirmDialog';
 import { api } from '../../lib/api';
 import { Payment, Room, Tenant } from '../../types';
 
@@ -38,6 +39,7 @@ const AdminPayments: React.FC = () => {
     method: '' as '' | 'card' | 'bank' | 'cash' | 'stripe',
   });
   const [loading, setLoading] = useState(true);
+  const [recordPaymentConfirmOpen, setRecordPaymentConfirmOpen] = useState(false);
 
   useEffect(() => {
     const loadMeta = async () => {
@@ -142,30 +144,30 @@ const AdminPayments: React.FC = () => {
     }));
   };
 
-  const handleRecordPayment = async (e: React.FormEvent) => {
+  const onRecordFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const payload: Record<string, unknown> = {
-        tenantId: recordForm.tenantId,
-        roomId: recordForm.roomId,
-        amount: Number(recordForm.amount),
-        dueDate: recordForm.dueDate,
-      };
-      if (recordForm.method) payload.method = recordForm.method;
-      await api.post<{ payment: Payment }>('/api/payments', payload);
-      setShowRecordModal(false);
-      setRecordForm({
-        tenantId: '',
-        roomId: '',
-        amount: '',
-        dueDate: '',
-        method: '',
-      });
-      setPage(1);
-      await loadPayments();
-    } catch {
-      /* ignore */
-    }
+    setRecordPaymentConfirmOpen(true);
+  };
+
+  const executeRecordPayment = async () => {
+    const payload: Record<string, unknown> = {
+      tenantId: recordForm.tenantId,
+      roomId: recordForm.roomId,
+      amount: Number(recordForm.amount),
+      dueDate: recordForm.dueDate,
+    };
+    if (recordForm.method) payload.method = recordForm.method;
+    await api.post<{ payment: Payment }>('/api/payments', payload);
+    setShowRecordModal(false);
+    setRecordForm({
+      tenantId: '',
+      roomId: '',
+      amount: '',
+      dueDate: '',
+      method: '',
+    });
+    setPage(1);
+    await loadPayments();
   };
 
   const handleDownloadReceipt = (payment: Payment) => {
@@ -191,11 +193,44 @@ const AdminPayments: React.FC = () => {
     window.URL.revokeObjectURL(url);
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
+  const recordTenantName = recordForm.tenantId ? tenantNames[recordForm.tenantId] : '';
+  const recordRoomLabel = recordForm.roomId ? roomNumbers[recordForm.roomId] : '';
 
-      <div className="container mx-auto px-4 py-8">
+  return (
+    <>
+      <ConfirmDialog
+        open={recordPaymentConfirmOpen}
+        onOpenChange={(o) => !o && setRecordPaymentConfirmOpen(false)}
+        title="Create this payment record?"
+        description={
+          <div className="space-y-1 text-sm">
+            <p>
+              <span className="font-medium text-gray-800">Tenant:</span> {recordTenantName || '—'}
+            </p>
+            <p>
+              <span className="font-medium text-gray-800">Room:</span> {recordRoomLabel || '—'}
+            </p>
+            <p>
+              <span className="font-medium text-gray-800">Amount:</span> ₹
+              {recordForm.amount ? Number(recordForm.amount).toLocaleString() : '—'}
+            </p>
+            <p>
+              <span className="font-medium text-gray-800">Due:</span>{' '}
+              {recordForm.dueDate ? new Date(recordForm.dueDate).toLocaleDateString() : '—'}
+            </p>
+          </div>
+        }
+        confirmLabel="Create payment"
+        onConfirm={async () => {
+          try {
+            await executeRecordPayment();
+          } catch (e) {
+            toast.error('Could not create payment');
+            throw e;
+          }
+        }}
+      />
+
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Payment Management</h1>
@@ -312,7 +347,6 @@ const AdminPayments: React.FC = () => {
             </div>
           </div>
         )}
-      </div>
 
       {showRecordModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
@@ -327,7 +361,7 @@ const AdminPayments: React.FC = () => {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handleRecordPayment} className="space-y-4">
+            <form onSubmit={onRecordFormSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tenant</label>
                 <select
@@ -481,7 +515,7 @@ const AdminPayments: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { User, Mail, Phone, Plus, Calendar, Upload, Camera, FileText, MapPin, Pencil, Trash2, Search } from 'lucide-react';
-import Navbar from '../../components/shared/Navbar';
 import Card from '../../components/shared/Card';
 import Button from '../../components/shared/Button';
 import Input from '../../components/shared/Input';
+import toast from 'react-hot-toast';
 import { api } from '../../lib/api';
+import ConfirmDialog from '../../components/shared/ConfirmDialog';
 import { Tenant, Room } from '../../types';
 
 const AdminTenants: React.FC = () => {
@@ -105,17 +106,13 @@ const AdminTenants: React.FC = () => {
     setEditingTenant(null);
   };
 
-  const handleDeleteTenant = async () => {
+  const executeDeleteTenant = async () => {
     if (!deleteConfirmTenant) return;
-    try {
-      await api.delete(`/api/tenants/${deleteConfirmTenant.id}`);
-      setTenants(prev => prev.filter(t => t.id !== deleteConfirmTenant.id));
-      const { data: r } = await api.get<{ rooms: Room[] }>('/api/rooms/public');
-      setVacantRooms(r.rooms);
-    } catch {
-      /* ignore */
-    }
-    setDeleteConfirmTenant(null);
+    await api.delete(`/api/tenants/${deleteConfirmTenant.id}`);
+    const id = deleteConfirmTenant.id;
+    setTenants((prev) => prev.filter((t) => t.id !== id));
+    const { data: r } = await api.get<{ rooms: Room[] }>('/api/rooms/public');
+    setVacantRooms(r.rooms);
   };
   const [formData, setFormData] = useState({
     name: '',
@@ -232,10 +229,24 @@ const AdminTenants: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      
-      <div className="container mx-auto px-4 py-8">
+    <>
+      <ConfirmDialog
+        open={!!deleteConfirmTenant}
+        onOpenChange={(o) => !o && setDeleteConfirmTenant(null)}
+        title={deleteConfirmTenant ? `Delete ${deleteConfirmTenant.name}?` : 'Delete tenant?'}
+        description="This will permanently delete the tenant account and vacate their room. This cannot be undone."
+        variant="danger"
+        confirmLabel="Delete tenant"
+        onConfirm={async () => {
+          try {
+            await executeDeleteTenant();
+          } catch (e) {
+            toast.error('Could not delete tenant');
+            throw e;
+          }
+        }}
+      />
+
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Tenant Management</h1>
           <p className="text-gray-600">Add and manage tenant information</p>
@@ -801,26 +812,8 @@ const AdminTenants: React.FC = () => {
             ))}
           </div>
 
-          {/* Delete Tenant Confirmation */}
-          {deleteConfirmTenant && (
-            <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 max-w-sm w-full shadow-xl mx-4">
-                <h3 className="text-lg font-semibold mb-2">Delete {deleteConfirmTenant.name}?</h3>
-                <p className="text-gray-600 mb-6">
-                  This will permanently delete the tenant account and vacate their room. This cannot be undone.
-                </p>
-                <div className="flex justify-end gap-3">
-                  <Button variant="secondary" onClick={() => setDeleteConfirmTenant(null)}>Cancel</Button>
-                  <Button variant="primary" onClick={handleDeleteTenant} className="bg-red-600 hover:bg-red-700">
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
-      </div>
-    </div>
+    </>
   );
 };
 

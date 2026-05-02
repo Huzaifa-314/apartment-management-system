@@ -73,6 +73,39 @@ export function createComplaintController() {
       }
     },
 
+    async createByAdmin(req, res, next) {
+      try {
+        const { tenantId, roomId, title, description, category, priority } = req.body;
+        if (!tenantId || !roomId || !title || !description) {
+          return res
+            .status(400)
+            .json({ message: 'tenantId, roomId, title, and description are required' });
+        }
+        const user = await User.findById(tenantId);
+        if (!user || user.role !== 'tenant') {
+          return res.status(400).json({ message: 'Invalid tenant user' });
+        }
+        const cat =
+          category && ['maintenance', 'neighbor', 'facility', 'other'].includes(String(category))
+            ? category
+            : 'other';
+        const pri =
+          priority && ['low', 'medium', 'high'].includes(String(priority)) ? priority : 'medium';
+        const complaint = await Complaint.create({
+          tenantId,
+          roomId,
+          title: String(title).trim(),
+          description: String(description).trim(),
+          category: cat,
+          priority: pri,
+          status: 'new',
+        });
+        res.status(201).json({ complaint: serializeComplaint(complaint) });
+      } catch (e) {
+        next(e);
+      }
+    },
+
     async update(req, res, next) {
       try {
         const complaint = await Complaint.findById(req.params.id);
