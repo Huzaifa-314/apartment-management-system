@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { Download, Calendar, X } from 'lucide-react';
+import { Download, Calendar } from 'lucide-react';
 import Button from '../../components/shared/Button';
-import Input from '../../components/shared/Input';
 import PaymentTable from '../../components/admin/PaymentTable';
 import ConfirmDialog from '../../components/shared/ConfirmDialog';
+import PaymentFormModal, {
+  PaymentFormData,
+} from '../../components/admin/modals/PaymentFormModal';
+import PaymentDetailsModal from '../../components/admin/modals/PaymentDetailsModal';
 import { api } from '../../lib/api';
 import { Payment, Room, Tenant } from '../../types';
 
@@ -31,15 +34,8 @@ const AdminPayments: React.FC = () => {
   const [roomRentByRoomId, setRoomRentByRoomId] = useState<Record<string, number>>({});
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [showRecordModal, setShowRecordModal] = useState(false);
-  const [recordForm, setRecordForm] = useState({
-    tenantId: '',
-    roomId: '',
-    amount: '',
-    dueDate: '',
-    method: '' as '' | 'card' | 'bank' | 'cash' | 'stripe',
-  });
+  const [pendingRecord, setPendingRecord] = useState<PaymentFormData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [recordPaymentConfirmOpen, setRecordPaymentConfirmOpen] = useState(false);
 
   useEffect(() => {
     const loadMeta = async () => {
@@ -127,45 +123,18 @@ const AdminPayments: React.FC = () => {
     }
   };
 
-  const handleViewPayment = (payment: Payment) => {
-    setSelectedPayment(payment);
-  };
-
-  const handleTenantSelect = (tenantId: string) => {
-    const tenant = tenantsList.find((t) => t.id === tenantId);
-    setRecordForm((prev) => ({
-      ...prev,
-      tenantId,
-      roomId: tenant?.roomId || '',
-      amount:
-        tenant?.roomId && roomRentByRoomId[tenant.roomId] != null
-          ? String(roomRentByRoomId[tenant.roomId])
-          : prev.amount,
-    }));
-  };
-
-  const onRecordFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setRecordPaymentConfirmOpen(true);
-  };
-
   const executeRecordPayment = async () => {
+    if (!pendingRecord) return;
     const payload: Record<string, unknown> = {
-      tenantId: recordForm.tenantId,
-      roomId: recordForm.roomId,
-      amount: Number(recordForm.amount),
-      dueDate: recordForm.dueDate,
+      tenantId: pendingRecord.tenantId,
+      roomId: pendingRecord.roomId,
+      amount: Number(pendingRecord.amount),
+      dueDate: pendingRecord.dueDate,
     };
-    if (recordForm.method) payload.method = recordForm.method;
+    if (pendingRecord.method) payload.method = pendingRecord.method;
     await api.post<{ payment: Payment }>('/api/payments', payload);
     setShowRecordModal(false);
-    setRecordForm({
-      tenantId: '',
-      roomId: '',
-      amount: '',
-      dueDate: '',
-      method: '',
-    });
+    setPendingRecord(null);
     setPage(1);
     await loadPayments();
   };
@@ -193,37 +162,43 @@ const AdminPayments: React.FC = () => {
     window.URL.revokeObjectURL(url);
   };
 
-  const recordTenantName = recordForm.tenantId ? tenantNames[recordForm.tenantId] : '';
-  const recordRoomLabel = recordForm.roomId ? roomNumbers[recordForm.roomId] : '';
+  const recordTenantName = pendingRecord?.tenantId ? tenantNames[pendingRecord.tenantId] : '';
+  const recordRoomLabel = pendingRecord?.roomId ? roomNumbers[pendingRecord.roomId] : '';
 
   return (
     <>
       <ConfirmDialog
-        open={recordPaymentConfirmOpen}
-        onOpenChange={(o) => !o && setRecordPaymentConfirmOpen(false)}
+        open={!!pendingRecord}
+        onOpenChange={(o) => !o && setPendingRecord(null)}
         title="Create this payment record?"
         description={
-          <div className="space-y-1 text-sm">
-            <p>
-              <span className="font-medium text-gray-800">Tenant:</span> {recordTenantName || '—'}
-            </p>
-            <p>
-              <span className="font-medium text-gray-800">Room:</span> {recordRoomLabel || '—'}
-            </p>
-            <p>
-              <span className="font-medium text-gray-800">Amount:</span> ₹
-              {recordForm.amount ? Number(recordForm.amount).toLocaleString() : '—'}
-            </p>
-            <p>
-              <span className="font-medium text-gray-800">Due:</span>{' '}
-              {recordForm.dueDate ? new Date(recordForm.dueDate).toLocaleDateString() : '—'}
-            </p>
-          </div>
+          pendingRecord ? (
+            <div className="space-y-1 text-sm">
+              <p>
+                <span className="font-medium text-gray-800">Tenant:</span>{' '}
+                {recordTenantName || '—'}
+              </p>
+              <p>
+                <span className="font-medium text-gray-800">Room:</span> {recordRoomLabel || '—'}
+              </p>
+              <p>
+                <span className="font-medium text-gray-800">Amount:</span> ₹
+                {pendingRecord.amount ? Number(pendingRecord.amount).toLocaleString() : '—'}
+              </p>
+              <p>
+                <span className="font-medium text-gray-800">Due:</span>{' '}
+                {pendingRecord.dueDate
+                  ? new Date(pendingRecord.dueDate).toLocaleDateString()
+                  : '—'}
+              </p>
+            </div>
+          ) : null
         }
         confirmLabel="Create payment"
         onConfirm={async () => {
           try {
             await executeRecordPayment();
+            toast.success('Payment created');
           } catch (e) {
             toast.error('Could not create payment');
             throw e;
@@ -231,287 +206,136 @@ const AdminPayments: React.FC = () => {
         }}
       />
 
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <PaymentFormModal
+        open={showRecordModal}
+        onOpenChange={setShowRecordModal}
+        tenants={tenantsList}
+        roomNumbers={roomNumbers}
+        roomRentByRoomId={roomRentByRoomId}
+        onSubmit={(data) => setPendingRecord(data)}
+      />
+
+      <PaymentDetailsModal
+        open={!!selectedPayment}
+        onOpenChange={(o) => !o && setSelectedPayment(null)}
+        payment={selectedPayment}
+        roomNumbers={roomNumbers}
+        tenantNames={tenantNames}
+      />
+
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Payment Management</h1>
+          <p className="text-gray-600">Track and manage all payments</p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            leftIcon={<Download className="h-5 w-5" />}
+            onClick={handleExportReport}
+          >
+            Export Report
+          </Button>
+          <Button
+            variant="primary"
+            leftIcon={<Calendar className="h-5 w-5" />}
+            onClick={() => setShowRecordModal(true)}
+          >
+            Add Payment
+          </Button>
+        </div>
+      </div>
+
+      <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Payment Management</h1>
-            <p className="text-gray-600">Track and manage all payments</p>
+            <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700 mb-1">
+              Status
+            </label>
+            <select
+              id="status-filter"
+              className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+              value={filterStatus}
+              onChange={(e) => {
+                setFilterStatus(e.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="all">All Statuses</option>
+              <option value="paid">Paid</option>
+              <option value="pending">Pending</option>
+              <option value="overdue">Overdue</option>
+            </select>
           </div>
+
+          <div>
+            <label htmlFor="month-filter" className="block text-sm font-medium text-gray-700 mb-1">
+              Due month
+            </label>
+            <select
+              id="month-filter"
+              className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+              value={filterMonth}
+              onChange={(e) => {
+                setFilterMonth(e.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="all">All Months</option>
+              {Array.from({ length: 12 }, (_, i) => {
+                const date = new Date();
+                date.setMonth(date.getMonth() - i);
+                return (
+                  <option
+                    key={i}
+                    value={`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`}
+                  >
+                    {date.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        {loading ? (
+          <div className="px-6 py-16 text-center text-gray-500 text-sm">Loading payments…</div>
+        ) : (
+          <PaymentTable
+            payments={payments}
+            roomNumbers={roomNumbers}
+            tenantNames={tenantNames}
+            onViewPayment={(p) => setSelectedPayment(p)}
+            onDownloadReceipt={handleDownloadReceipt}
+          />
+        )}
+      </div>
+
+      {totalPages > 1 && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600">
+          <p>
+            Page {page} of {totalPages}
+            {total > 0 ? ` · ${total} total` : ''}
+          </p>
           <div className="flex gap-2">
             <Button
               variant="secondary"
-              leftIcon={<Download className="h-5 w-5" />}
-              onClick={handleExportReport}
+              type="button"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
             >
-              Export Report
+              Previous
             </Button>
             <Button
-              variant="primary"
-              leftIcon={<Calendar className="h-5 w-5" />}
-              onClick={() => setShowRecordModal(true)}
+              variant="secondary"
+              type="button"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
             >
-              Add Payment
+              Next
             </Button>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                id="status-filter"
-                className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                value={filterStatus}
-                onChange={(e) => {
-                  setFilterStatus(e.target.value);
-                  setPage(1);
-                }}
-              >
-                <option value="all">All Statuses</option>
-                <option value="paid">Paid</option>
-                <option value="pending">Pending</option>
-                <option value="overdue">Overdue</option>
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="month-filter" className="block text-sm font-medium text-gray-700 mb-1">
-                Due month
-              </label>
-              <select
-                id="month-filter"
-                className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                value={filterMonth}
-                onChange={(e) => {
-                  setFilterMonth(e.target.value);
-                  setPage(1);
-                }}
-              >
-                <option value="all">All Months</option>
-                {Array.from({ length: 12 }, (_, i) => {
-                  const date = new Date();
-                  date.setMonth(date.getMonth() - i);
-                  return (
-                    <option
-                      key={i}
-                      value={`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`}
-                    >
-                      {date.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          {loading ? (
-            <div className="px-6 py-16 text-center text-gray-500 text-sm">Loading payments…</div>
-          ) : (
-            <PaymentTable
-              payments={payments}
-              roomNumbers={roomNumbers}
-              tenantNames={tenantNames}
-              onViewPayment={handleViewPayment}
-              onDownloadReceipt={handleDownloadReceipt}
-            />
-          )}
-        </div>
-
-        {totalPages > 1 && (
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600">
-            <p>
-              Page {page} of {totalPages}
-              {total > 0 ? ` · ${total} total` : ''}
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                type="button"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="secondary"
-                type="button"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        )}
-
-      {showRecordModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Add payment record</h3>
-              <button
-                onClick={() => setShowRecordModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-                type="button"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form onSubmit={onRecordFormSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tenant</label>
-                <select
-                  className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                  value={recordForm.tenantId}
-                  onChange={(e) => handleTenantSelect(e.target.value)}
-                  required
-                >
-                  <option value="">Select tenant</option>
-                  {tenantsList.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Room</label>
-                <input
-                  className="block w-full rounded-md border border-gray-300 bg-gray-50 py-2 px-3 text-sm text-gray-500"
-                  value={
-                    recordForm.roomId ? roomNumbers[recordForm.roomId] || recordForm.roomId : 'Auto-filled from tenant'
-                  }
-                  readOnly
-                />
-              </div>
-              <Input
-                type="number"
-                label="Amount (₹)"
-                value={recordForm.amount}
-                onChange={(e) => setRecordForm({ ...recordForm, amount: e.target.value })}
-                required
-              />
-              <Input
-                type="date"
-                label="Due Date"
-                value={recordForm.dueDate}
-                onChange={(e) => setRecordForm({ ...recordForm, dueDate: e.target.value })}
-                required
-              />
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Expected method (optional)
-                </label>
-                <select
-                  className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                  value={recordForm.method}
-                  onChange={(e) =>
-                    setRecordForm({
-                      ...recordForm,
-                      method: e.target.value as typeof recordForm.method,
-                    })
-                  }
-                >
-                  <option value="">Not specified</option>
-                  <option value="cash">Cash</option>
-                  <option value="bank">Bank transfer</option>
-                  <option value="card">Card</option>
-                  <option value="stripe">Stripe</option>
-                </select>
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="secondary" type="button" onClick={() => setShowRecordModal(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" variant="primary">
-                  Create Payment
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {selectedPayment && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Payment Details</h3>
-              <button
-                onClick={() => setSelectedPayment(null)}
-                className="text-gray-400 hover:text-gray-600"
-                type="button"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Room</span>
-                <span className="font-medium">
-                  {roomNumbers[selectedPayment.roomId] || selectedPayment.roomId}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Tenant</span>
-                <span className="font-medium">
-                  {tenantNames[selectedPayment.tenantId] || selectedPayment.tenantId}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Amount</span>
-                <span className="font-medium">₹{selectedPayment.amount.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Due Date</span>
-                <span className="font-medium">
-                  {new Date(selectedPayment.dueDate).toLocaleDateString()}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Status</span>
-                <span
-                  className={`font-medium capitalize ${
-                    selectedPayment.status === 'paid'
-                      ? 'text-green-600'
-                      : selectedPayment.status === 'overdue'
-                        ? 'text-red-600'
-                        : 'text-yellow-600'
-                  }`}
-                >
-                  {selectedPayment.status}
-                </span>
-              </div>
-              {selectedPayment.date && (
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Payment Date</span>
-                  <span className="font-medium">
-                    {new Date(selectedPayment.date).toLocaleDateString()}
-                  </span>
-                </div>
-              )}
-              {selectedPayment.method && (
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Method</span>
-                  <span className="font-medium capitalize">{selectedPayment.method}</span>
-                </div>
-              )}
-              {selectedPayment.reference && (
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Reference</span>
-                  <span className="font-medium">{selectedPayment.reference}</span>
-                </div>
-              )}
-            </div>
-            <div className="mt-6 flex justify-end">
-              <Button variant="secondary" onClick={() => setSelectedPayment(null)}>
-                Close
-              </Button>
-            </div>
           </div>
         </div>
       )}

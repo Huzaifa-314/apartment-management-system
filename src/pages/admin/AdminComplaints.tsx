@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { AlertCircle, X } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import Button from '../../components/shared/Button';
-import Input from '../../components/shared/Input';
 import ComplaintsTable from '../../components/admin/ComplaintsTable';
 import { api } from '../../lib/api';
 import ConfirmDialog from '../../components/shared/ConfirmDialog';
+import ComplaintFormModal, {
+  ComplaintFormData,
+} from '../../components/admin/modals/ComplaintFormModal';
 import { Complaint, Room, Tenant } from '../../types';
 
 const PAGE_SIZE = 15;
@@ -35,15 +37,7 @@ const AdminComplaints: React.FC = () => {
     status: Complaint['status'];
   } | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createConfirmOpen, setCreateConfirmOpen] = useState(false);
-  const [createForm, setCreateForm] = useState({
-    tenantId: '',
-    roomId: '',
-    title: '',
-    description: '',
-    category: 'maintenance' as Complaint['category'],
-    priority: 'medium' as Complaint['priority'],
-  });
+  const [pendingCreate, setPendingCreate] = useState<ComplaintFormData | null>(null);
 
   useEffect(() => {
     const loadMeta = async () => {
@@ -81,7 +75,9 @@ const AdminComplaints: React.FC = () => {
       if (filterStatus !== 'all') params.set('status', filterStatus);
       if (filterPriority !== 'all') params.set('priority', filterPriority);
       if (filterCategory !== 'all') params.set('category', filterCategory);
-      const { data } = await api.get<ComplaintsApiResponse>(`/api/complaints?${params.toString()}`);
+      const { data } = await api.get<ComplaintsApiResponse>(
+        `/api/complaints?${params.toString()}`
+      );
       setComplaints(data.complaints);
       if (data.totalPages != null) setTotalPages(data.totalPages);
       if (data.total != null) setTotal(data.total);
@@ -97,7 +93,9 @@ const AdminComplaints: React.FC = () => {
   }, [loadComplaints]);
 
   const applyStatusChange = async (id: string, status: Complaint['status']) => {
-    const { data } = await api.patch<{ complaint: Complaint }>(`/api/complaints/${id}`, { status });
+    const { data } = await api.patch<{ complaint: Complaint }>(`/api/complaints/${id}`, {
+      status,
+    });
     setComplaints((prev) => prev.map((c) => (c.id === id ? data.complaint : c)));
   };
 
@@ -115,46 +113,33 @@ const AdminComplaints: React.FC = () => {
     })();
   };
 
-  const tenantsWithRooms = tenantsList.filter((t) => t.roomId);
-
   const createComplaintAdmin = async () => {
+    if (!pendingCreate) return;
     await api.post<{ complaint: Complaint }>('/api/complaints/admin', {
-      tenantId: createForm.tenantId,
-      roomId: createForm.roomId,
-      title: createForm.title.trim(),
-      description: createForm.description.trim(),
-      category: createForm.category,
-      priority: createForm.priority,
+      tenantId: pendingCreate.tenantId,
+      roomId: pendingCreate.roomId,
+      title: pendingCreate.title.trim(),
+      description: pendingCreate.description.trim(),
+      category: pendingCreate.category,
+      priority: pendingCreate.priority,
     });
-  };
-
-  const resetCreateForm = () => {
-    setCreateForm({
-      tenantId: '',
-      roomId: '',
-      title: '',
-      description: '',
-      category: 'maintenance',
-      priority: 'medium',
-    });
-  };
-
-  const openCreateModal = () => {
-    resetCreateForm();
-    setShowCreateModal(true);
   };
 
   return (
     <>
       <ConfirmDialog
-        open={createConfirmOpen}
-        onOpenChange={(o) => !o && setCreateConfirmOpen(false)}
+        open={!!pendingCreate}
+        onOpenChange={(o) => !o && setPendingCreate(null)}
         title="Create complaint for this tenant?"
         description={
-          createForm.tenantId ? (
+          pendingCreate ? (
             <p>
-              Filed as <span className="font-medium">{tenantNames[createForm.tenantId]}</span> for{' '}
-              {createForm.roomId ? roomNumbers[createForm.roomId] || createForm.roomId : '—'}.
+              Filed as <span className="font-medium">{tenantNames[pendingCreate.tenantId]}</span>{' '}
+              for{' '}
+              {pendingCreate.roomId
+                ? roomNumbers[pendingCreate.roomId] || pendingCreate.roomId
+                : '—'}
+              .
             </p>
           ) : null
         }
@@ -164,7 +149,7 @@ const AdminComplaints: React.FC = () => {
             await createComplaintAdmin();
             toast.success('Complaint created');
             setShowCreateModal(false);
-            resetCreateForm();
+            setPendingCreate(null);
             if (page !== 1) setPage(1);
             else await loadComplaints();
           } catch (e) {
@@ -200,252 +185,135 @@ const AdminComplaints: React.FC = () => {
         }}
       />
 
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <ComplaintFormModal
+        open={showCreateModal}
+        onOpenChange={setShowCreateModal}
+        tenants={tenantsList}
+        roomNumbers={roomNumbers}
+        onSubmit={(data) => setPendingCreate(data)}
+      />
+
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Complaint Management</h1>
+          <p className="text-gray-600">Track and resolve tenant complaints</p>
+        </div>
+        <Button
+          variant="primary"
+          leftIcon={<AlertCircle className="h-5 w-5" />}
+          onClick={() => setShowCreateModal(true)}
+        >
+          Create Complaint
+        </Button>
+      </div>
+
+      <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Complaint Management</h1>
-            <p className="text-gray-600">Track and resolve tenant complaints</p>
-          </div>
-          <Button variant="primary" leftIcon={<AlertCircle className="h-5 w-5" />} onClick={openCreateModal}>
-            Create Complaint
-          </Button>
-        </div>
-
-        <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                id="status-filter"
-                className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                value={filterStatus}
-                onChange={(e) => {
-                  setFilterStatus(e.target.value);
-                  setPage(1);
-                }}
-              >
-                <option value="all">All Statuses</option>
-                <option value="new">New</option>
-                <option value="inProgress">In Progress</option>
-                <option value="resolved">Resolved</option>
-                <option value="rejected">Rejected</option>
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="priority-filter" className="block text-sm font-medium text-gray-700 mb-1">
-                Priority
-              </label>
-              <select
-                id="priority-filter"
-                className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                value={filterPriority}
-                onChange={(e) => {
-                  setFilterPriority(e.target.value);
-                  setPage(1);
-                }}
-              >
-                <option value="all">All Priorities</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="category-filter" className="block text-sm font-medium text-gray-700 mb-1">
-                Category
-              </label>
-              <select
-                id="category-filter"
-                className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
-                value={filterCategory}
-                onChange={(e) => {
-                  setFilterCategory(e.target.value);
-                  setPage(1);
-                }}
-              >
-                <option value="all">All Categories</option>
-                <option value="maintenance">Maintenance</option>
-                <option value="neighbor">Neighbor</option>
-                <option value="facility">Facility</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          {loading ? (
-            <div className="text-center py-16 text-gray-500 text-sm">Loading complaints…</div>
-          ) : complaints.length > 0 ? (
-            <ComplaintsTable
-              complaints={complaints}
-              roomNumbers={roomNumbers}
-              tenantNames={tenantNames}
-              onStatusChange={handleStatusChange}
-            />
-          ) : (
-            <div className="text-center py-16 px-4">
-              <p className="text-gray-500">No complaints match these filters.</p>
-              <p className="mt-1 text-xs text-gray-400">Try clearing filters or check back later.</p>
-            </div>
-          )}
-        </div>
-
-        {!loading && totalPages > 1 && (
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600">
-            <p>
-              Page {page} of {totalPages}
-              {total > 0 ? ` · ${total} total` : ''}
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                type="button"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="secondary"
-                type="button"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        )}
-
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Create complaint (admin)</h3>
-              <button
-                type="button"
-                className="text-gray-400 hover:text-gray-600"
-                onClick={() => {
-                  setShowCreateModal(false);
-                  resetCreateForm();
-                }}
-                aria-label="Close"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <form
-              className="space-y-4"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!createForm.tenantId || !createForm.roomId || !createForm.title.trim()) {
-                  toast.error('Select a tenant with a room and enter a title');
-                  return;
-                }
-                setCreateConfirmOpen(true);
+            <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700 mb-1">
+              Status
+            </label>
+            <select
+              id="status-filter"
+              className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+              value={filterStatus}
+              onChange={(e) => {
+                setFilterStatus(e.target.value);
+                setPage(1);
               }}
             >
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tenant</label>
-                <select
-                  className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 text-sm"
-                  value={createForm.tenantId}
-                  required
-                  onChange={(e) => {
-                    const id = e.target.value;
-                    const t = tenantsList.find((x) => x.id === id);
-                    setCreateForm((prev) => ({
-                      ...prev,
-                      tenantId: id,
-                      roomId: t?.roomId || '',
-                    }));
-                  }}
-                >
-                  <option value="">Select tenant</option>
-                  {tenantsWithRooms.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </select>
-                {tenantsWithRooms.length === 0 && (
-                  <p className="text-xs text-amber-700 mt-1">No tenants with an assigned room.</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Room</label>
-                <input
-                  className="block w-full rounded-md border border-gray-300 bg-gray-50 py-2 px-3 text-sm text-gray-600"
-                  readOnly
-                  value={createForm.roomId ? roomNumbers[createForm.roomId] || createForm.roomId : '—'}
-                />
-              </div>
-              <Input
-                label="Title"
-                value={createForm.title}
-                onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
-                required
-              />
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea
-                  className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 min-h-[100px]"
-                  value={createForm.description}
-                  onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                  <select
-                    className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 text-sm"
-                    value={createForm.category}
-                    onChange={(e) =>
-                      setCreateForm({ ...createForm, category: e.target.value as Complaint['category'] })
-                    }
-                  >
-                    <option value="maintenance">Maintenance</option>
-                    <option value="neighbor">Neighbor</option>
-                    <option value="facility">Facility</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                  <select
-                    className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 text-sm"
-                    value={createForm.priority}
-                    onChange={(e) =>
-                      setCreateForm({ ...createForm, priority: e.target.value as Complaint['priority'] })
-                    }
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <Button
-                  variant="secondary"
-                  type="button"
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    resetCreateForm();
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" variant="primary">
-                  Submit…
-                </Button>
-              </div>
-            </form>
+              <option value="all">All Statuses</option>
+              <option value="new">New</option>
+              <option value="inProgress">In Progress</option>
+              <option value="resolved">Resolved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="priority-filter" className="block text-sm font-medium text-gray-700 mb-1">
+              Priority
+            </label>
+            <select
+              id="priority-filter"
+              className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+              value={filterPriority}
+              onChange={(e) => {
+                setFilterPriority(e.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="all">All Priorities</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="category-filter" className="block text-sm font-medium text-gray-700 mb-1">
+              Category
+            </label>
+            <select
+              id="category-filter"
+              className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+              value={filterCategory}
+              onChange={(e) => {
+                setFilterCategory(e.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="all">All Categories</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="neighbor">Neighbor</option>
+              <option value="facility">Facility</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        {loading ? (
+          <div className="text-center py-16 text-gray-500 text-sm">Loading complaints…</div>
+        ) : complaints.length > 0 ? (
+          <ComplaintsTable
+            complaints={complaints}
+            roomNumbers={roomNumbers}
+            tenantNames={tenantNames}
+            onStatusChange={handleStatusChange}
+          />
+        ) : (
+          <div className="text-center py-16 px-4">
+            <p className="text-gray-500">No complaints match these filters.</p>
+            <p className="mt-1 text-xs text-gray-400">Try clearing filters or check back later.</p>
+          </div>
+        )}
+      </div>
+
+      {!loading && totalPages > 1 && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600">
+          <p>
+            Page {page} of {totalPages}
+            {total > 0 ? ` · ${total} total` : ''}
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              type="button"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="secondary"
+              type="button"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </Button>
           </div>
         </div>
       )}
