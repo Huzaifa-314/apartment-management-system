@@ -27,12 +27,11 @@ type CreateForm = {
   leaseEndDate: string;
   rentAmount: string;
   securityDeposit: string;
-  address: { street: string; city: string; state: string; pincode: string };
+  address: { street: string; city: string; pincode: string };
   emergencyContact: { name: string; phone: string; relationship: string };
   documents: {
     profilePicture: File | null;
     voterId: File | null;
-    aadharCard: File | null;
     leaseAgreement: File | null;
   };
   occupation: { type: string; company: string; designation: string; workAddress: string };
@@ -48,9 +47,9 @@ const emptyCreateForm = (): CreateForm => ({
   leaseEndDate: '',
   rentAmount: '',
   securityDeposit: '',
-  address: { street: '', city: '', state: '', pincode: '' },
+  address: { street: '', city: '', pincode: '' },
   emergencyContact: { name: '', phone: '', relationship: '' },
-  documents: { profilePicture: null, voterId: null, aadharCard: null, leaseAgreement: null },
+  documents: { profilePicture: null, voterId: null, leaseAgreement: null },
   occupation: { type: 'employed', company: '', designation: '', workAddress: '' },
 });
 
@@ -131,7 +130,6 @@ const TenantFormModal: React.FC<TenantFormModalProps> = ({
       fd.append('occupation', JSON.stringify(createData.occupation));
       if (createData.documents.profilePicture) fd.append('profilePicture', createData.documents.profilePicture);
       if (createData.documents.voterId) fd.append('voterId', createData.documents.voterId);
-      if (createData.documents.aadharCard) fd.append('aadharCard', createData.documents.aadharCard);
       if (createData.documents.leaseAgreement) fd.append('leaseAgreement', createData.documents.leaseAgreement);
       const { data } = await api.post<{ tenant: Tenant }>('/api/tenants', fd);
       toast.success('Tenant registered');
@@ -238,7 +236,7 @@ const TenantFormModal: React.FC<TenantFormModalProps> = ({
                   .filter((r) => r.id !== initial?.roomId)
                   .map((r) => (
                     <option key={r.id} value={r.id}>
-                      Room {r.number} — Floor {r.floor} (₹{r.rent})
+                      Room {r.number} — Floor {r.floor} ({r.rent.toLocaleString()})
                     </option>
                   ))}
               </select>
@@ -257,14 +255,14 @@ const TenantFormModal: React.FC<TenantFormModalProps> = ({
             />
             <Input
               type="number"
-              label="Monthly Rent (₹)"
+              label="Monthly Rent"
               value={editData.rentAmount}
               onChange={(e) => setEditData({ ...editData, rentAmount: e.target.value })}
               placeholder="Leave blank to keep current"
             />
             <Input
               type="number"
-              label="Security Deposit (₹)"
+              label="Security Deposit"
               value={editData.securityDeposit}
               onChange={(e) => setEditData({ ...editData, securityDeposit: e.target.value })}
               placeholder="Leave blank to keep current"
@@ -388,7 +386,7 @@ const TenantFormModal: React.FC<TenantFormModalProps> = ({
                 <option value="">Select vacant room</option>
                 {vacantRooms.map((room) => (
                   <option key={room.id} value={room.id}>
-                    Room {room.number} — Floor {room.floor} (₹{room.rent})
+                    Room {room.number} — Floor {room.floor} ({room.rent.toLocaleString()})
                   </option>
                 ))}
               </select>
@@ -414,14 +412,14 @@ const TenantFormModal: React.FC<TenantFormModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
                 type="number"
-                label="Monthly Rent (₹)"
+                label="Monthly Rent"
                 value={createData.rentAmount}
                 onChange={(e) => setCreateData({ ...createData, rentAmount: e.target.value })}
                 required
               />
               <Input
                 type="number"
-                label="Security Deposit (₹)"
+                label="Security Deposit"
                 value={createData.securityDeposit}
                 onChange={(e) => setCreateData({ ...createData, securityDeposit: e.target.value })}
                 required
@@ -443,7 +441,7 @@ const TenantFormModal: React.FC<TenantFormModalProps> = ({
               leftIcon={<MapPin className="h-5 w-5 text-gray-400" />}
               required
             />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
                 label="City"
                 value={createData.address.city}
@@ -456,28 +454,17 @@ const TenantFormModal: React.FC<TenantFormModalProps> = ({
                 required
               />
               <Input
-                label="State"
-                value={createData.address.state}
+                label="PIN Code"
+                value={createData.address.pincode}
                 onChange={(e) =>
                   setCreateData({
                     ...createData,
-                    address: { ...createData.address, state: e.target.value },
+                    address: { ...createData.address, pincode: e.target.value },
                   })
                 }
                 required
               />
             </div>
-            <Input
-              label="PIN Code"
-              value={createData.address.pincode}
-              onChange={(e) =>
-                setCreateData({
-                  ...createData,
-                  address: { ...createData.address, pincode: e.target.value },
-                })
-              }
-              required
-            />
           </div>
 
           <div className="space-y-4">
@@ -620,43 +607,24 @@ const TenantFormModal: React.FC<TenantFormModalProps> = ({
                 </label>
               </div>
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Aadhar Card</label>
+                <label className="block text-sm font-medium text-gray-700">Lease Agreement</label>
                 <label className="block">
                   <input
                     type="file"
                     className="hidden"
-                    onChange={handleFileChange('aadharCard')}
-                    accept="image/*,.pdf"
+                    onChange={handleFileChange('leaseAgreement')}
+                    accept=".pdf"
                   />
                   <div className="flex items-center justify-center px-6 py-4 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-500 cursor-pointer">
                     <div className="text-center">
-                      <Upload className="mx-auto h-6 w-6 text-gray-400" />
+                      <FileText className="mx-auto h-6 w-6 text-gray-400" />
                       <p className="mt-1 text-sm text-gray-500">
-                        {createData.documents.aadharCard?.name || 'Upload Aadhar Card'}
+                        {createData.documents.leaseAgreement?.name || 'Upload Lease Agreement (PDF)'}
                       </p>
                     </div>
                   </div>
                 </label>
               </div>
-            </div>
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Lease Agreement</label>
-              <label className="block">
-                <input
-                  type="file"
-                  className="hidden"
-                  onChange={handleFileChange('leaseAgreement')}
-                  accept=".pdf"
-                />
-                <div className="flex items-center justify-center px-6 py-4 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-500 cursor-pointer">
-                  <div className="text-center">
-                    <FileText className="mx-auto h-6 w-6 text-gray-400" />
-                    <p className="mt-1 text-sm text-gray-500">
-                      {createData.documents.leaseAgreement?.name || 'Upload Lease Agreement (PDF)'}
-                    </p>
-                  </div>
-                </div>
-              </label>
             </div>
           </div>
         </form>

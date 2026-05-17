@@ -1,7 +1,7 @@
 import { format, parseISO } from 'date-fns';
 import { jsPDF } from 'jspdf';
 import type { Payment } from '../types';
-import { formatCurrency } from './formatCurrency';
+import { formatAmount } from './formatAmount';
 
 export type PaymentReceiptRoomInfo = {
   label: string;
@@ -21,8 +21,6 @@ export type PaymentReceiptTenantInfo = {
 /** Full context for a PDF receipt and matching on-screen details. */
 export type PaymentReceiptDetails = {
   payment: Payment;
-  currencySymbol: string;
-  currencyCode?: string;
   propertyName?: string;
   tenant: PaymentReceiptTenantInfo;
   room: PaymentReceiptRoomInfo;
@@ -49,7 +47,7 @@ function capitalizeRoomType(t: string | undefined): string | undefined {
 
 /** Generates and downloads a PDF payment receipt in the browser. */
 export function downloadPaymentReceiptPdf(details: PaymentReceiptDetails): void {
-  const { payment, currencySymbol, currencyCode, propertyName, tenant, room } = details;
+  const { payment, propertyName, tenant, room } = details;
   const ref = payment.reference?.trim();
   const filenameBase = safeFilenamePart(ref || '') || payment.id.slice(0, 12);
 
@@ -102,9 +100,7 @@ export function downloadPaymentReceiptPdf(details: PaymentReceiptDetails): void 
 
   write('Payment', 11, 'bold');
   write(`Payment record ID: ${payment.id}`);
-  write(
-    `Amount: ${formatCurrency(payment.amount, currencySymbol)}${currencyCode ? ` (${currencyCode})` : ''}`
-  );
+  write(`Amount: ${formatAmount(payment.amount)}`);
   write(`Due date: ${formatDisplayDate(payment.dueDate)}`);
   write(`Paid on: ${formatDisplayDate(payment.date)}`);
   write(`Status: ${payment.status}`);

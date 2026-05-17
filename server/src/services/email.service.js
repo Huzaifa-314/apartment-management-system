@@ -38,7 +38,7 @@ export async function sendPaymentReminderEmail(tenantEmail, tenantName, amount, 
   return sendMail({
     to: tenantEmail,
     subject: 'Rent payment reminder',
-    text: `Hello ${tenantName},\n\nThis is a reminder that your rent payment of ₹${amount} is due on ${dueDateStr}.\n\nThank you.`,
+    text: `Hello ${tenantName},\n\nThis is a reminder that your rent payment of ${amount} is due on ${dueDateStr}.\n\nThank you.`,
   });
 }
 

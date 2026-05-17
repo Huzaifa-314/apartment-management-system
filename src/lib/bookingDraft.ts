@@ -64,7 +64,6 @@ export type BookingDraftFormSnapshot = {
   address: {
     street: string;
     city: string;
-    state: string;
     pincode: string;
   };
   emergencyContact: {
@@ -171,7 +170,7 @@ const emptyFormSnapshot = (): BookingDraftFormSnapshot => ({
   alternatePhone: '',
   moveInDate: '',
   leaseEndDate: '',
-  address: { street: '', city: '', state: '', pincode: '' },
+  address: { street: '', city: '', pincode: '' },
   emergencyContact: { name: '', phone: '', relationship: '' },
   occupation: {
     type: 'employed',

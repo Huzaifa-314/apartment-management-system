@@ -5,8 +5,7 @@ import Navbar from '../../components/shared/Navbar';
 import Button from '../../components/shared/Button';
 import Input from '../../components/shared/Input';
 import { api, assetUrl } from '../../lib/api';
-import { formatCurrency } from '../../lib/formatCurrency';
-import { useSiteSettings } from '../../context/SiteSettingsContext';
+import { formatAmount } from '../../lib/formatAmount';
 import { BookingApplication } from '../../types';
 import { format, parseISO } from 'date-fns';
 
@@ -15,14 +14,12 @@ function applicationDocumentLinks(documents?: BookingApplication['documents']) {
   const pairs: { label: string; url: string }[] = [
     { label: 'Profile photo', url: documents.profilePicture! },
     { label: 'Voter ID', url: documents.voterId! },
-    { label: 'Aadhar', url: documents.aadharCard! },
     { label: 'Income proof', url: documents.incomeProof! },
   ];
   return pairs.filter((p): p is { label: string; url: string } => Boolean(p.url));
 }
 
 const TenantApplications: React.FC = () => {
-  const { settings } = useSiteSettings();
   const [bookings, setBookings] = useState<BookingApplication[]>([]);
   const [filtered, setFiltered] = useState<BookingApplication[]>([]);
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -174,7 +171,7 @@ const TenantApplications: React.FC = () => {
                             <div className="text-gray-500 text-xs">
                               Floor {b.room.floor} · <span className="capitalize">{b.room.type}</span>
                               {b.room.rent != null
-                                ? ` · ${formatCurrency(b.room.rent, settings.currencySymbol)}/mo`
+                                ? ` · ${formatAmount(b.room.rent)}/mo`
                                 : ''}
                             </div>
                           </>
@@ -302,8 +299,8 @@ const TenantApplications: React.FC = () => {
                 <div>
                   <p className="font-medium text-gray-700 mb-1">Address</p>
                   <p>
-                    {selected.address.street}, {selected.address.city}, {selected.address.state} —{' '}
-                    {selected.address.pincode}
+                    {selected.address.street}, {selected.address.city}
+                    {selected.address.pincode ? ` — ${selected.address.pincode}` : ''}
                   </p>
                 </div>
               )}

@@ -10,8 +10,6 @@ const FALLBACK: SiteSettings = {
   phone: '+1 234 567 890',
   emergencyPhone: '+1 234 567 891',
   officeHours: 'Mon–Fri 9:00 AM – 5:00 PM',
-  currencySymbol: '৳',
-  currencyCode: 'BDT',
   liveChatEnabled: false,
   liveChatUrl: '',
   heroTagline: 'Premium room management system for modern property management',

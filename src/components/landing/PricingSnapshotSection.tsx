@@ -1,6 +1,6 @@
 import React from 'react';
 import { User, Users, Crown } from 'lucide-react';
-import { formatCurrency } from '../../lib/formatCurrency';
+import { formatAmount } from '../../lib/formatAmount';
 import type { HomepageData, Room } from '../../types';
 
 const TIERS: { type: Room['type']; label: string; blurb: string; icon: React.ReactNode }[] = [
@@ -13,14 +13,12 @@ type PricingSnapshotSectionProps = {
   pricing: HomepageData['pricing'];
   loading: boolean;
   homepageUnavailable: boolean;
-  currencySymbol: string;
 };
 
 const PricingSnapshotSection: React.FC<PricingSnapshotSectionProps> = ({
   pricing,
   loading,
   homepageUnavailable,
-  currencySymbol,
 }) => {
   const visibleTiers = TIERS.filter((t) => pricing[t.type] != null);
 
@@ -55,7 +53,7 @@ const PricingSnapshotSection: React.FC<PricingSnapshotSectionProps> = ({
                   <h3 className="mt-3 text-base font-semibold text-gray-900 dark:text-white">{label}</h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">{blurb}</p>
                   <p className="mt-3 text-2xl font-bold text-gray-900 dark:text-white">
-                    {formatCurrency(amount, currencySymbol)}
+                    {formatAmount(amount)}
                     <span className="text-base font-normal text-gray-500 dark:text-gray-400">/mo</span>
                   </p>
                 </div>

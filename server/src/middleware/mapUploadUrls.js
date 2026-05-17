@@ -11,7 +11,6 @@ export function mapUploadUrls(subdir) {
     };
     add('profilePicture');
     add('voterId');
-    add('aadharCard');
     add('leaseAgreement');
     add('incomeProof');
     next();

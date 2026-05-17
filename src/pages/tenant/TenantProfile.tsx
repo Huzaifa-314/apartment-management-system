@@ -6,8 +6,7 @@ import Card from '../../components/shared/Card';
 import Button from '../../components/shared/Button';
 import Input from '../../components/shared/Input';
 import { api } from '../../lib/api';
-import { formatCurrency } from '../../lib/formatCurrency';
-import { useSiteSettings } from '../../context/SiteSettingsContext';
+import { formatAmount } from '../../lib/formatAmount';
 import { Tenant, Room } from '../../types';
 import {
   loadBookingDraft,
@@ -19,7 +18,6 @@ import { format, parseISO } from 'date-fns';
 const TenantProfile: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { settings } = useSiteSettings();
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [roomSummary, setRoomSummary] = useState<Room | null>(null);
   const [draft, setDraft] = useState<BookingDraft | null>(() => loadBookingDraft());
@@ -360,7 +358,7 @@ const TenantProfile: React.FC = () => {
                 <span className="text-gray-600">
                   {' '}
                   · {draft.roomSummary.type} ·{' '}
-                  {formatCurrency(draft.roomSummary.rent, settings.currencySymbol)}/mo
+                  {formatAmount(draft.roomSummary.rent)}/mo
                 </span>
               )}
             </p>

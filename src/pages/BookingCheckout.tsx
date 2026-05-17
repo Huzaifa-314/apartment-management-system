@@ -164,7 +164,7 @@ const BookingCheckout: React.FC = () => {
                     <div className="flex justify-between gap-4">
                       <dt className="text-gray-600">Monthly rent</dt>
                       <dd className="font-medium text-gray-900 text-right">
-                        ₹{typeof rent === 'number' ? rent.toLocaleString() : '—'}
+                        {typeof rent === 'number' ? rent.toLocaleString() : '—'}
                       </dd>
                     </div>
                   </>
@@ -182,8 +182,8 @@ const BookingCheckout: React.FC = () => {
               <Card>
                 <p className="text-sm text-gray-600 mb-4">
                   You will be redirected to SSLCommerz to complete payment for the first month&apos;s rent
-                  (amount sent to the gateway matches your room rent; currency is set server-side for SSLCommerz,
-                  typically BDT). After payment you will return here to confirm your application.
+                  (the amount sent to the gateway matches your room rent). After payment you will return here to
+                  confirm your application.
                 </p>
                 {loadError && (
                   <p className="text-red-700 bg-red-50 border border-red-100 rounded-lg px-4 py-3 mb-4 text-sm">

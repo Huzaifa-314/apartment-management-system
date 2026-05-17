@@ -3,7 +3,7 @@ import { Download } from 'lucide-react';
 import Modal from './Modal';
 import Button from './Button';
 import { Payment } from '../../types';
-import { formatCurrency } from '../../lib/formatCurrency';
+import { formatAmount } from '../../lib/formatAmount';
 import { format, parseISO } from 'date-fns';
 import StatusIndicator from './StatusIndicator';
 
@@ -11,7 +11,6 @@ export interface PaymentDetailsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   payment: Payment | null;
-  currencySymbol: string;
   propertyName?: string;
   tenantName: string;
   tenantEmail?: string;
@@ -43,7 +42,6 @@ const PaymentDetailsModal: React.FC<PaymentDetailsModalProps> = ({
   open,
   onOpenChange,
   payment,
-  currencySymbol,
   propertyName,
   tenantName,
   tenantEmail,
@@ -171,7 +169,7 @@ const PaymentDetailsModal: React.FC<PaymentDetailsModalProps> = ({
               <div className="flex justify-between sm:block sm:space-y-1">
                 <dt className="text-gray-500">Amount</dt>
                 <dd className="font-semibold text-gray-900 text-right sm:text-left">
-                  {formatCurrency(payment.amount, currencySymbol)}
+                  {formatAmount(payment.amount)}
                 </dd>
               </div>
               <div className="flex justify-between sm:block sm:space-y-1">

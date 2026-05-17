@@ -12,7 +12,6 @@ const tenantProfileSchema = new mongoose.Schema(
     address: {
       street: String,
       city: String,
-      state: String,
       pincode: String,
     },
     emergencyContact: {
@@ -31,7 +30,6 @@ const tenantProfileSchema = new mongoose.Schema(
       idProof: String,
       profilePicture: String,
       voterId: String,
-      aadharCard: String,
     },
   },
   { timestamps: true }

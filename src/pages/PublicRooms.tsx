@@ -10,7 +10,7 @@ import { Room } from '../types';
 import PublicSiteHeader from '../components/shared/PublicSiteHeader';
 import { useAuth } from '../context/AuthContext';
 import { useSiteSettings } from '../context/SiteSettingsContext';
-import { formatCurrency } from '../lib/formatCurrency';
+import { formatAmount } from '../lib/formatAmount';
 import { getAmenityIcon } from '../lib/amenityIcon';
 import PublicFooter from '../components/shared/PublicFooter';
 
@@ -223,7 +223,7 @@ const PublicRooms: React.FC = () => {
                     <div>
                       <p className="text-sm text-gray-600">Monthly Rent</p>
                       <p className="text-2xl font-bold text-blue-600">
-                        {formatCurrency(room.rent, settings.currencySymbol)}
+                        {formatAmount(room.rent)}
                       </p>
                     </div>
                     <div className="text-right">

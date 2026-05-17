@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Building2, MapPin, Maximize } from 'lucide-react';
 import Button from '../shared/Button';
 import Card from '../shared/Card';
-import { formatCurrency } from '../../lib/formatCurrency';
+import { formatAmount } from '../../lib/formatAmount';
 import { saveBookingDraftFromPublicRoom } from '../../lib/bookingDraft';
 import type { Room } from '../../types';
 
@@ -24,14 +24,12 @@ type FeaturedRoomsSectionProps = {
   rooms: Room[];
   loading: boolean;
   homepageUnavailable: boolean;
-  currencySymbol: string;
 };
 
 const FeaturedRoomsSection: React.FC<FeaturedRoomsSectionProps> = ({
   rooms,
   loading,
   homepageUnavailable,
-  currencySymbol,
 }) => {
   const navigate = useNavigate();
 
@@ -117,7 +115,7 @@ const FeaturedRoomsSection: React.FC<FeaturedRoomsSectionProps> = ({
                   <div className="rounded-lg bg-blue-50 p-3 dark:bg-blue-950/40">
                     <p className="text-xs text-gray-600 dark:text-gray-400">Monthly rent</p>
                     <p className="text-xl font-bold text-blue-700 dark:text-blue-300">
-                      {formatCurrency(room.rent, currencySymbol)}
+                      {formatAmount(room.rent)}
                     </p>
                   </div>
                   <div className="flex flex-col gap-2 sm:flex-row">

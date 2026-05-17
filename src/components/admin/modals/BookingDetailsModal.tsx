@@ -14,7 +14,7 @@ export interface BookingDetailsApplication {
   status: 'pending_payment' | 'pending' | 'approved' | 'rejected';
   rejectionReason?: string;
   createdAt: string;
-  address?: { street?: string; city?: string; state?: string; pincode?: string };
+  address?: { street?: string; city?: string; pincode?: string };
   emergencyContact?: { name?: string; phone?: string; relationship?: string };
   occupation?: { type?: string; company?: string; designation?: string };
   additionalNotes?: string;
@@ -121,8 +121,8 @@ const BookingDetailsModal: React.FC<BookingDetailsModalProps> = ({
             <div>
               <p className="font-medium text-gray-700 mb-1">Address</p>
               <p>
-                {booking.address.street}, {booking.address.city}, {booking.address.state} —{' '}
-                {booking.address.pincode}
+                {booking.address.street}, {booking.address.city}
+                {booking.address.pincode ? ` — ${booking.address.pincode}` : ''}
               </p>
             </div>
           )}

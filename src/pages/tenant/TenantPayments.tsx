@@ -8,7 +8,7 @@ import StatusIndicator from '../../components/shared/StatusIndicator';
 import { useAuth } from '../../context/AuthContext';
 import { useSiteSettings } from '../../context/SiteSettingsContext';
 import { api } from '../../lib/api';
-import { formatCurrency } from '../../lib/formatCurrency';
+import { formatAmount } from '../../lib/formatAmount';
 import { selectCurrentPayment } from '../../lib/paymentUtils';
 import PaymentDetailsModal from '../../components/shared/PaymentDetailsModal';
 import { Payment, Tenant, Room } from '../../types';
@@ -129,8 +129,6 @@ const TenantPayments: React.FC = () => {
     const room = roomsById[payment.roomId];
     downloadPaymentReceiptPdf({
       payment,
-      currencySymbol: settings.currencySymbol,
-      currencyCode: settings.currencyCode,
       propertyName: settings.propertyName,
       tenant: {
         name: tenant.name,
@@ -216,7 +214,6 @@ const TenantPayments: React.FC = () => {
         open={!!detailPayment}
         onOpenChange={(o) => !o && setDetailPayment(null)}
         payment={detailPayment}
-        currencySymbol={settings.currencySymbol}
         propertyName={settings.propertyName}
         tenantName={tenantProfile?.name ?? user?.name ?? '—'}
         tenantEmail={tenantProfile?.email ?? user?.email}
@@ -244,7 +241,7 @@ const TenantPayments: React.FC = () => {
             <div className="text-right">
               <p className="text-sm text-gray-600">Current Balance</p>
               <p className="text-2xl font-bold text-gray-900">
-                {formatCurrency(currentPayment.amount, settings.currencySymbol)}
+                {formatAmount(currentPayment.amount)}
               </p>
             </div>
           )}
@@ -273,7 +270,7 @@ const TenantPayments: React.FC = () => {
                 <div className="text-center p-4 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-500 mb-1">Amount Due</p>
                   <p className="text-2xl font-bold text-blue-600">
-                    {formatCurrency(currentPayment.amount, settings.currencySymbol)}
+                    {formatAmount(currentPayment.amount)}
                   </p>
                 </div>
                 <div className="text-center p-4 bg-gray-50 rounded-lg">
@@ -294,7 +291,7 @@ const TenantPayments: React.FC = () => {
                   onClick={goToCheckoutConfirmation}
                   className="px-8 py-3"
                 >
-                  Review &amp; pay {formatCurrency(currentPayment.amount, settings.currencySymbol)}
+                  Review &amp; pay {formatAmount(currentPayment.amount)}
                 </Button>
               </div>
             </div>
@@ -356,7 +353,7 @@ const TenantPayments: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {formatCurrency(payment.amount, settings.currencySymbol)}
+                        {formatAmount(payment.amount)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

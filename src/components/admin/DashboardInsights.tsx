@@ -40,9 +40,9 @@ const DashboardInsights: React.FC<DashboardInsightsProps> = ({
 
   lines.push({
     icon: <CircleDollarSign className="h-5 w-5" />,
-    text: `Collection rate is ${financialSummary.collectionRate.toFixed(1)}% with ₹${financialSummary.pendingAmount.toLocaleString()} still pending${
+    text: `Collection rate is ${financialSummary.collectionRate.toFixed(1)}% with ${financialSummary.pendingAmount.toLocaleString()} still pending${
       financialSummary.overdueAmount > 0
-        ? ` and ₹${financialSummary.overdueAmount.toLocaleString()} overdue`
+        ? ` and ${financialSummary.overdueAmount.toLocaleString()} overdue`
         : ''
     }.`,
   });

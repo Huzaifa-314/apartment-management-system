@@ -13,7 +13,6 @@ const bookingApplicationSchema = new mongoose.Schema(
     address: {
       street: String,
       city: String,
-      state: String,
       pincode: String,
     },
     emergencyContact: {
@@ -37,7 +36,6 @@ const bookingApplicationSchema = new mongoose.Schema(
     documents: {
       profilePicture: String,
       voterId: String,
-      aadharCard: String,
       incomeProof: String,
     },
     status: {
@@ -48,7 +46,6 @@ const bookingApplicationSchema = new mongoose.Schema(
     sslcommerzTransactionId: { type: String, default: '' },
     sslcommerzSessionId: { type: String, default: '' },
     paidAmount: { type: Number, default: null },
-    currency: { type: String, default: 'inr' },
     paidAt: { type: Date, default: null },
     rejectionReason: { type: String, default: '' },
   },

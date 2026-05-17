@@ -17,9 +17,8 @@ import PublicSiteHeader from '../components/shared/PublicSiteHeader';
 import PublicFooter from '../components/shared/PublicFooter';
 import { api } from '../lib/api';
 import { saveBookingDraftFromPublicRoom } from '../lib/bookingDraft';
-import { formatCurrency } from '../lib/formatCurrency';
+import { formatAmount } from '../lib/formatAmount';
 import { getAmenityIcon } from '../lib/amenityIcon';
-import { useSiteSettings } from '../context/SiteSettingsContext';
 import type { Room } from '../types';
 
 function getRoomTypeColor(type: Room['type']) {
@@ -38,7 +37,6 @@ function getRoomTypeColor(type: Room['type']) {
 const PublicRoomDetail: React.FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
-  const { settings } = useSiteSettings();
   const [room, setRoom] = useState<Room | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -217,7 +215,7 @@ const PublicRoomDetail: React.FC = () => {
                 <div className="rounded-lg bg-blue-50 p-4">
                   <p className="text-sm text-gray-600">Monthly rent</p>
                   <p className="mt-1 text-3xl font-bold text-blue-600">
-                    {formatCurrency(room.rent, settings.currencySymbol)}
+                    {formatAmount(room.rent)}
                   </p>
                   <p className="mt-2 text-xs text-gray-500">Includes utilities and maintenance.</p>
                 </div>

@@ -152,8 +152,6 @@ const AdminPayments: React.FC = () => {
     const room = roomsById[payment.roomId];
     downloadPaymentReceiptPdf({
       payment,
-      currencySymbol: settings.currencySymbol || '৳',
-      currencyCode: settings.currencyCode,
       propertyName: settings.propertyName,
       tenant: {
         name: tenant?.name ?? tenantNames[payment.tenantId] ?? 'Unknown',
@@ -201,7 +199,7 @@ const AdminPayments: React.FC = () => {
                 <span className="font-medium text-gray-800">Room:</span> {recordRoomLabel || '—'}
               </p>
               <p>
-                <span className="font-medium text-gray-800">Amount:</span> ₹
+                <span className="font-medium text-gray-800">Amount:</span>{' '}
                 {pendingRecord.amount ? Number(pendingRecord.amount).toLocaleString() : '—'}
               </p>
               <p>
@@ -238,7 +236,6 @@ const AdminPayments: React.FC = () => {
         open={!!selectedPayment}
         onOpenChange={(o) => !o && setSelectedPayment(null)}
         payment={selectedPayment}
-        currencySymbol={settings.currencySymbol}
         propertyName={settings.propertyName}
         tenantName={
           selectedTenant?.name ??

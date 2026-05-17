@@ -137,8 +137,6 @@ export type SiteSettings = {
   phone: string;
   emergencyPhone: string;
   officeHours: string;
-  currencySymbol: string;
-  currencyCode: string;
   liveChatEnabled: boolean;
   liveChatUrl: string;
   heroTagline: string;
@@ -178,7 +176,7 @@ export type BookingApplication = {
   email: string;
   phone: string;
   alternatePhone?: string;
-  address?: { street?: string; city?: string; state?: string; pincode?: string };
+  address?: { street?: string; city?: string; pincode?: string };
   emergencyContact?: { name?: string; phone?: string; relationship?: string };
   occupation?: {
     type?: string;
@@ -192,13 +190,11 @@ export type BookingApplication = {
   documents?: {
     profilePicture?: string;
     voterId?: string;
-    aadharCard?: string;
     incomeProof?: string;
   };
   stripeCheckoutSessionId?: string;
   stripePaymentIntentId?: string;
   paidAmount?: number;
-  currency?: string;
   paidAt?: string;
   rejectionReason?: string;
 };

@@ -9,8 +9,6 @@ const siteSettingsSchema = new mongoose.Schema(
     phone: { type: String, default: '+1 234 567 890' },
     emergencyPhone: { type: String, default: '+1 234 567 891' },
     officeHours: { type: String, default: 'Mon–Fri 9:00 AM – 5:00 PM' },
-    currencySymbol: { type: String, default: '৳' },
-    currencyCode: { type: String, default: 'BDT' },
     /** Kept for future live chat integration; UI reads this from API instead of hardcoding. */
     liveChatEnabled: { type: Boolean, default: false },
     liveChatUrl: { type: String, default: '' },

@@ -118,7 +118,6 @@ export const tenantController = {
         documents: {
           profilePicture: req.fileUrls?.profilePicture,
           voterId: req.fileUrls?.voterId,
-          aadharCard: req.fileUrls?.aadharCard,
           leaseAgreement: req.fileUrls?.leaseAgreement,
         },
       });

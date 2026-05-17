@@ -14,8 +14,6 @@ const empty: SiteSettings = {
   phone: '',
   emergencyPhone: '',
   officeHours: '',
-  currencySymbol: '',
-  currencyCode: '',
   liveChatEnabled: false,
   liveChatUrl: '',
   heroTagline: '',
@@ -122,8 +120,6 @@ const AdminSiteSettings: React.FC = () => {
       <Card title="Branding & contact">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {field('propertyName', 'Property name')}
-          {field('currencySymbol', 'Currency symbol')}
-          {field('currencyCode', 'Currency code (ISO)')}
           {field('contactEmail', 'Public contact email', 'email')}
           {field('managementEmail', 'Management / tenant email', 'email')}
           {field('phone', 'Main phone')}

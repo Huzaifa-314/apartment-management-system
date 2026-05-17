@@ -17,16 +17,14 @@ import WelcomeMessage from '../../components/tenant/WelcomeMessage';
 import Announcements from '../../components/tenant/Announcements';
 import ContactManagement from '../../components/tenant/ContactManagement';
 import { useAuth } from '../../context/AuthContext';
-import { useSiteSettings } from '../../context/SiteSettingsContext';
 import { api } from '../../lib/api';
-import { formatCurrency } from '../../lib/formatCurrency';
+import { formatAmount } from '../../lib/formatAmount';
 import { selectCurrentPayment } from '../../lib/paymentUtils';
 import { Room, Payment, Complaint, Tenant, AnnouncementItem } from '../../types';
 import { format, parseISO } from 'date-fns';
 
 const TenantDashboard: React.FC = () => {
   const { user } = useAuth();
-  const { settings } = useSiteSettings();
   const navigate = useNavigate();
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [room, setRoom] = useState<Room | null>(null);
@@ -156,7 +154,7 @@ const TenantDashboard: React.FC = () => {
               {currentPayment ? (
                 <>
                   <p className="text-xl font-semibold text-gray-900 mt-1">
-                    {formatCurrency(currentPayment.amount, settings.currencySymbol)}
+                    {formatAmount(currentPayment.amount)}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
                     Due {formatDate(currentPayment.dueDate)} · {rentStatusLabel}
@@ -245,7 +243,7 @@ const TenantDashboard: React.FC = () => {
                       <div>
                         <dt className="text-xs text-gray-500">Monthly rent</dt>
                         <dd className="text-sm font-semibold text-blue-700 mt-0.5">
-                          {formatCurrency(room.rent, settings.currencySymbol)}
+                          {formatAmount(room.rent)}
                         </dd>
                       </div>
                     </dl>
@@ -317,7 +315,7 @@ const TenantDashboard: React.FC = () => {
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">Amount due</p>
                       <p className="text-3xl font-bold text-gray-900 mt-1">
-                        {formatCurrency(currentPayment.amount, settings.currencySymbol)}
+                        {formatAmount(currentPayment.amount)}
                       </p>
                     </div>
                     <StatusIndicator status={currentPayment.status} />
@@ -391,7 +389,7 @@ const TenantDashboard: React.FC = () => {
                             {formatDate(payment.dueDate)}
                           </td>
                           <td className="px-4 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">
-                            {formatCurrency(payment.amount, settings.currencySymbol)}
+                            {formatAmount(payment.amount)}
                           </td>
                           <td className="px-6 py-3 whitespace-nowrap text-right">
                             <StatusIndicator status={payment.status} size="sm" />

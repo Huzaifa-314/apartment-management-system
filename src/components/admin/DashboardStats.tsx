@@ -2,6 +2,7 @@ import React from 'react';
 import Card from '../shared/Card';
 import { Building2, Users, CircleDollarSign, AlertCircle } from 'lucide-react';
 import { FinancialSummary } from '../../types';
+import { formatAmount } from '../../lib/formatAmount';
 
 interface DashboardStatsProps {
   totalRooms: number;
@@ -22,10 +23,6 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
   financialSummary,
   pendingComplaints,
 }) => {
-  const formatCurrency = (amount: number) => {
-    return `₹${amount.toLocaleString()}`;
-  };
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {/* Room Statistics */}
@@ -85,11 +82,11 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
           <div className="ml-4">
             <h3 className="text-lg font-semibold text-gray-800">Revenue</h3>
             <div className="flex flex-col mt-2">
-              <p className="text-3xl font-bold text-green-600">{formatCurrency(financialSummary.totalRevenue)}</p>
+              <p className="text-3xl font-bold text-green-600">{formatAmount(financialSummary.totalRevenue)}</p>
               <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
                 <div>
                   <p className="text-gray-500">Pending</p>
-                  <p className="font-medium">{formatCurrency(financialSummary.pendingAmount)}</p>
+                  <p className="font-medium">{formatAmount(financialSummary.pendingAmount)}</p>
                 </div>
                 <div>
                   <p className="text-gray-500">Collection Rate</p>

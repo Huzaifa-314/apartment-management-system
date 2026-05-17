@@ -93,8 +93,12 @@ export function serializeBookingApplication(b) {
     phone: o.phone || '',
     alternatePhone: o.alternatePhone || '',
     address:
-      o.address && (o.address.street || o.address.city || o.address.state || o.address.pincode)
-        ? o.address
+      o.address && (o.address.street || o.address.city || o.address.pincode)
+        ? {
+            street: o.address.street || undefined,
+            city: o.address.city || undefined,
+            pincode: o.address.pincode || undefined,
+          }
         : undefined,
     emergencyContact: o.emergencyContact?.name ? o.emergencyContact : undefined,
     occupation: o.occupation?.type ? o.occupation : undefined,
@@ -104,14 +108,12 @@ export function serializeBookingApplication(b) {
       ? {
           profilePicture: o.documents.profilePicture || undefined,
           voterId: o.documents.voterId || undefined,
-          aadharCard: o.documents.aadharCard || undefined,
           incomeProof: o.documents.incomeProof || undefined,
         }
       : undefined,
     stripeCheckoutSessionId: o.stripeCheckoutSessionId || undefined,
     stripePaymentIntentId: o.stripePaymentIntentId || undefined,
     paidAmount: o.paidAmount != null ? o.paidAmount : undefined,
-    currency: o.currency || undefined,
     paidAt: o.paidAt ? new Date(o.paidAt).toISOString() : undefined,
     rejectionReason: o.rejectionReason || undefined,
   };

@@ -61,7 +61,6 @@ export function createRouter(env) {
   const tenantUploadFields = upload.fields([
     { name: 'profilePicture', maxCount: 1 },
     { name: 'voterId', maxCount: 1 },
-    { name: 'aadharCard', maxCount: 1 },
     { name: 'leaseAgreement', maxCount: 1 },
   ]);
   router.patch(
@@ -135,7 +134,6 @@ export function createRouter(env) {
   const bookingUpload = upload.fields([
     { name: 'profilePicture', maxCount: 1 },
     { name: 'voterId', maxCount: 1 },
-    { name: 'aadharCard', maxCount: 1 },
     { name: 'incomeProof', maxCount: 1 },
   ]);
   router.get('/bookings/me', authMw, bookingController.listMine);

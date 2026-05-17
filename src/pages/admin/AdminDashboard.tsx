@@ -6,6 +6,7 @@ import Card from '../../components/shared/Card';
 import DashboardStats from '../../components/admin/DashboardStats';
 import DashboardInsights from '../../components/admin/DashboardInsights';
 import { api } from '../../lib/api';
+import { formatAmount } from '../../lib/formatAmount';
 import { Payment, Complaint, Room } from '../../types';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { Bar, Doughnut } from 'react-chartjs-2';
@@ -271,7 +272,7 @@ const AdminDashboard: React.FC = () => {
                   y: {
                     beginAtZero: true,
                     ticks: {
-                      callback: (value) => `₹${(value as number).toLocaleString()}`,
+                      callback: (value) => (value as number).toLocaleString(),
                     },
                   },
                 },
@@ -362,7 +363,7 @@ const AdminDashboard: React.FC = () => {
                     <p className="text-xs text-gray-500">Due: {format(dueDate, 'MMM d, yyyy')}</p>
                   </div>
                   <p className="text-sm font-semibold text-blue-600">
-                    ₹{payment.amount.toLocaleString()}
+                    {formatAmount(payment.amount)}
                   </p>
                 </div>
               );

@@ -30,7 +30,6 @@ function initialFormState() {
     address: {
       street: '',
       city: '',
-      state: '',
       pincode: '',
     },
     emergencyContact: {
@@ -41,7 +40,6 @@ function initialFormState() {
     documents: {
       profilePicture: null as File | null,
       voterId: null as File | null,
-      aadharCard: null as File | null,
       incomeProof: null as File | null,
     },
     occupation: {
@@ -103,7 +101,6 @@ const BookingForm: React.FC = () => {
         documents: {
           profilePicture: null,
           voterId: null,
-          aadharCard: null,
           incomeProof: null,
         },
       }));
@@ -200,7 +197,6 @@ const BookingForm: React.FC = () => {
       fd.append('additionalNotes', formData.additionalNotes);
       if (formData.documents.profilePicture) fd.append('profilePicture', formData.documents.profilePicture);
       if (formData.documents.voterId) fd.append('voterId', formData.documents.voterId);
-      if (formData.documents.aadharCard) fd.append('aadharCard', formData.documents.aadharCard);
       if (formData.documents.incomeProof) fd.append('incomeProof', formData.documents.incomeProof);
 
       const { data, status } = await api.post<{
@@ -294,7 +290,7 @@ const BookingForm: React.FC = () => {
                   </div>
                   <div className="col-span-2">
                     <p className="text-gray-600">Monthly Rent:</p>
-                    <p className="text-2xl font-bold text-blue-600">₹{room.rent.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-blue-600">{room.rent.toLocaleString()}</p>
                   </div>
                 </div>
 
@@ -433,7 +429,7 @@ const BookingForm: React.FC = () => {
                     required
                   />
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input
                       label="City"
                       value={formData.address.city}
@@ -445,25 +441,15 @@ const BookingForm: React.FC = () => {
                     />
 
                     <Input
-                      label="State"
-                      value={formData.address.state}
+                      label="PIN Code"
+                      value={formData.address.pincode}
                       onChange={(e) => setFormData({
                         ...formData,
-                        address: { ...formData.address, state: e.target.value }
+                        address: { ...formData.address, pincode: e.target.value }
                       })}
                       required
                     />
                   </div>
-
-                  <Input
-                    label="PIN Code"
-                    value={formData.address.pincode}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      address: { ...formData.address, pincode: e.target.value }
-                    })}
-                    required
-                  />
                 </div>
 
                 {/* Occupation Details */}
@@ -527,7 +513,7 @@ const BookingForm: React.FC = () => {
 
                   <Input
                     type="number"
-                    label="Monthly Income (₹)"
+                    label="Monthly Income"
                     value={formData.occupation.monthlyIncome}
                     onChange={(e) => setFormData({
                       ...formData,
@@ -661,51 +647,27 @@ const BookingForm: React.FC = () => {
 
                     <div className="space-y-2">
                       <label className="block text-sm font-medium text-gray-700">
-                        Aadhar Card
+                        Income Proof
                       </label>
                       <label className="flex-1">
                         <div className="relative">
                           <input
                             type="file"
                             className="hidden"
-                            onChange={handleFileChange('aadharCard')}
-                            accept="image/*,.pdf"
+                            onChange={handleFileChange('incomeProof')}
+                            accept=".pdf"
                           />
                           <div className="flex items-center justify-center px-6 py-4 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-500 cursor-pointer">
                             <div className="text-center">
-                              <Upload className="mx-auto h-6 w-6 text-gray-400" />
+                              <FileText className="mx-auto h-6 w-6 text-gray-400" />
                               <p className="mt-1 text-sm text-gray-500">
-                                {formData.documents.aadharCard?.name || 'Upload Aadhar Card'}
+                                {formData.documents.incomeProof?.name || 'Upload Income Proof (PDF)'}
                               </p>
                             </div>
                           </div>
                         </div>
                       </label>
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Income Proof
-                    </label>
-                    <label className="flex-1">
-                      <div className="relative">
-                        <input
-                          type="file"
-                          className="hidden"
-                          onChange={handleFileChange('incomeProof')}
-                          accept=".pdf"
-                        />
-                        <div className="flex items-center justify-center px-6 py-4 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-500 cursor-pointer">
-                          <div className="text-center">
-                            <FileText className="mx-auto h-6 w-6 text-gray-400" />
-                            <p className="mt-1 text-sm text-gray-500">
-                              {formData.documents.incomeProof?.name || 'Upload Income Proof (PDF)'}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </label>
                   </div>
                 </div>
 

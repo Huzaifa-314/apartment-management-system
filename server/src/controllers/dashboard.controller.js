@@ -67,7 +67,7 @@ export const dashboardController = {
         rows.push({
           id: `pay-${p._id}`,
           kind: 'payment',
-          message: `Rent record ${st === 'paid' ? 'marked paid' : st}: ₹${p.amount}`,
+          message: `Rent record ${st === 'paid' ? 'marked paid' : st}: ${p.amount.toLocaleString()}`,
           occurredAt: new Date(p.updatedAt || p.dueDate || Date.now()).toISOString(),
         });
       }

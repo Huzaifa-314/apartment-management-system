@@ -4,6 +4,7 @@ import { Download, FileText } from 'lucide-react';
 import Card from '../../components/shared/Card';
 import Button from '../../components/shared/Button';
 import { api } from '../../lib/api';
+import { formatAmount } from '../../lib/formatAmount';
 import { Payment, Room, Tenant } from '../../types';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -110,13 +111,13 @@ const AdminReports: React.FC = () => {
             </p>
           </Card>
           <Card title="Revenue">
-            <p className="text-2xl font-bold text-emerald-600">₹{fs.totalRevenue.toLocaleString()}</p>
+            <p className="text-2xl font-bold text-emerald-600">{formatAmount(fs.totalRevenue)}</p>
             <p className="text-sm text-gray-600 mt-2">Paid rent recorded to date</p>
           </Card>
           <Card title="Outstanding">
-            <p className="text-2xl font-bold text-amber-700">₹{fs.pendingAmount.toLocaleString()}</p>
+            <p className="text-2xl font-bold text-amber-700">{formatAmount(fs.pendingAmount)}</p>
             <p className="text-sm text-gray-600 mt-2">
-              Pending · ₹{fs.overdueAmount.toLocaleString()} overdue · Collection{' '}
+              Pending · {formatAmount(fs.overdueAmount)} overdue · Collection{' '}
               {fs.collectionRate.toFixed(1)}%
             </p>
           </Card>

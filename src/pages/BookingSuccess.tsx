@@ -8,6 +8,7 @@ import Button from '../components/shared/Button';
 import Card from '../components/shared/Card';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../lib/api';
+import { formatAmount } from '../lib/formatAmount';
 import type { BookingApplication } from '../types';
 
 function formatDisplayDate(iso: string | null | undefined): string {
@@ -17,12 +18,6 @@ function formatDisplayDate(iso: string | null | undefined): string {
   } catch {
     return '—';
   }
-}
-
-function formatMoney(amount: number | undefined, currency: string | undefined): string {
-  const c = currency || 'BDT';
-  if (amount == null || Number.isNaN(amount)) return '—';
-  return `${c} ${amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
 
 const BookingSuccess: React.FC = () => {
@@ -196,10 +191,9 @@ const BookingSuccess: React.FC = () => {
                   <div className="flex justify-between gap-4">
                     <dt className="text-gray-600">Monthly rent</dt>
                     <dd className="font-medium text-gray-900 text-right">
-                      {formatMoney(
-                        typeof confirmedBooking.room.rent === 'number' ? confirmedBooking.room.rent : undefined,
-                        confirmedBooking.currency
-                      )}
+                      {confirmedBooking.room.rent != null && Number.isFinite(confirmedBooking.room.rent)
+                        ? formatAmount(confirmedBooking.room.rent)
+                        : '—'}
                     </dd>
                   </div>
                   <div className="flex justify-between gap-4">
@@ -229,7 +223,9 @@ const BookingSuccess: React.FC = () => {
                     Amount paid
                   </dt>
                   <dd className="font-semibold text-gray-900 text-right">
-                    {formatMoney(confirmedBooking.paidAmount, confirmedBooking.currency)}
+                    {confirmedBooking.paidAmount != null && Number.isFinite(confirmedBooking.paidAmount)
+                      ? formatAmount(confirmedBooking.paidAmount)
+                      : '—'}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4">

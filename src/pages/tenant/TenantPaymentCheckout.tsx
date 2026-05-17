@@ -7,16 +7,14 @@ import Card from '../../components/shared/Card';
 import Button from '../../components/shared/Button';
 import StatusIndicator from '../../components/shared/StatusIndicator';
 import { useAuth } from '../../context/AuthContext';
-import { useSiteSettings } from '../../context/SiteSettingsContext';
 import { api } from '../../lib/api';
-import { formatCurrency } from '../../lib/formatCurrency';
+import { formatAmount } from '../../lib/formatAmount';
 import { isPayableRentPayment } from '../../lib/paymentUtils';
 import type { Payment } from '../../types';
 import { format, parseISO } from 'date-fns';
 
 const TenantPaymentCheckout: React.FC = () => {
   const { user } = useAuth();
-  const { settings } = useSiteSettings();
   const navigate = useNavigate();
   const { paymentId } = useParams<{ paymentId: string }>();
 
@@ -154,7 +152,7 @@ const TenantPaymentCheckout: React.FC = () => {
                 <div className="flex justify-between items-baseline">
                   <dt className="text-gray-600">Amount due</dt>
                   <dd className="text-xl font-bold text-gray-900">
-                    {formatCurrency(payment.amount, settings.currencySymbol)}
+                    {formatAmount(payment.amount)}
                   </dd>
                 </div>
                 <div className="flex justify-between items-center">

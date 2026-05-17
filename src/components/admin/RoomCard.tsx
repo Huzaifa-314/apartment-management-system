@@ -47,7 +47,7 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, tenantName, onViewDetails, on
           <div className="font-medium capitalize">{room.type}</div>
           
           <div className="text-gray-600">Rent:</div>
-          <div className="font-medium">₹{room.rent.toLocaleString()}</div>
+          <div className="font-medium">{room.rent.toLocaleString()}</div>
           
           <div className="text-gray-600">Area:</div>
           <div className="font-medium">{room.area} sq.ft</div>

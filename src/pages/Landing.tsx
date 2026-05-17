@@ -42,14 +42,12 @@ const Landing: React.FC = () => {
         stats={stats}
         loading={loading}
         homepageUnavailable={homepageUnavailable}
-        currencySymbol={settings.currencySymbol}
       />
 
       <FeaturedRoomsSection
         rooms={featuredRooms}
         loading={loading}
         homepageUnavailable={homepageUnavailable}
-        currencySymbol={settings.currencySymbol}
       />
 
       <AnnouncementsSection announcements={announcements} />
@@ -58,7 +56,6 @@ const Landing: React.FC = () => {
         pricing={pricing}
         loading={loading}
         homepageUnavailable={homepageUnavailable}
-        currencySymbol={settings.currencySymbol}
       />
 
       <AmenitiesStrip

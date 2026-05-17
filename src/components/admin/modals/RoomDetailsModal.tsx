@@ -48,8 +48,8 @@ const RoomDetailsModal: React.FC<RoomDetailsModalProps> = ({
                 <span className="capitalize">{room.status}</span>
               </p>
               <p>
-                <span className="font-medium text-gray-700">Rent:</span> ₹
-                {room.rent.toLocaleString()}
+                <span className="font-medium text-gray-700">Rent:</span>{' '}
+                <span className="text-gray-900">{room.rent.toLocaleString()}</span>
               </p>
               <p>
                 <span className="font-medium text-gray-700">Area:</span> {room.area} sq.ft

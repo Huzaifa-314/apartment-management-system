@@ -191,7 +191,6 @@ export const bookingController = {
         const docPayload = {
           profilePicture: booking.documents?.profilePicture,
           voterId: booking.documents?.voterId,
-          aadharCard: booking.documents?.aadharCard,
         };
 
         if (profile) {
@@ -488,7 +487,6 @@ export const bookingController = {
         documents: {
           profilePicture: req.fileUrls?.profilePicture,
           voterId: req.fileUrls?.voterId,
-          aadharCard: req.fileUrls?.aadharCard,
           incomeProof: req.fileUrls?.incomeProof,
         },
       };

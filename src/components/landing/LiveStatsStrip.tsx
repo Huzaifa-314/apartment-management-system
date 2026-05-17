@@ -1,27 +1,25 @@
 import React from 'react';
 import { Building2, DoorOpen, Percent, Wallet } from 'lucide-react';
-import { formatCurrency } from '../../lib/formatCurrency';
+import { formatAmount } from '../../lib/formatAmount';
 import type { HomepageData } from '../../types';
 
 type LiveStatsStripProps = {
   stats: HomepageData['stats'] | null;
   loading: boolean;
   homepageUnavailable: boolean;
-  currencySymbol: string;
 };
 
 const LiveStatsStrip: React.FC<LiveStatsStripProps> = ({
   stats,
   loading,
   homepageUnavailable,
-  currencySymbol,
 }) => {
   const effectiveStats = homepageUnavailable && !loading ? null : stats;
 
   const fromLabel = (() => {
     if (!effectiveStats) return '—';
     if (effectiveStats.availableRooms === 0) return 'No vacancies';
-    return `${formatCurrency(effectiveStats.startingRent, currencySymbol)}/mo`;
+    return `${formatAmount(effectiveStats.startingRent)}/mo`;
   })();
 
   const items = [

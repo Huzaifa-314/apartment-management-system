@@ -122,7 +122,7 @@ const PaymentFormModal: React.FC<PaymentFormModalProps> = ({
         </div>
         <Input
           type="number"
-          label="Amount (₹)"
+          label="Amount"
           value={form.amount}
           onChange={(e) => setForm({ ...form, amount: e.target.value })}
           required

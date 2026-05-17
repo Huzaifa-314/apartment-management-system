@@ -136,7 +136,7 @@ const AdminRooms: React.FC = () => {
           pendingCreate ? (
             <p>
               Room <span className="font-medium">{pendingCreate.number || '—'}</span>, floor{' '}
-              {pendingCreate.floor}, rent ₹{pendingCreate.rent || '—'}/mo will be added as vacant.
+              {pendingCreate.floor}, rent {pendingCreate.rent != null ? Number(pendingCreate.rent).toLocaleString() : '—'}/mo will be added as vacant.
             </p>
           ) : null
         }
